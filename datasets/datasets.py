@@ -48,7 +48,7 @@ class IntrinsicDataset(Dataset):
             composite = decode_image(img_set['composite'], mode='RGB') / 255.0
         except Exception as e:
             print(e)
-            print(f"Mask path: {img_set['mask']}")
+            print(f"Invalid image from the set, consider removing the whole set: {img_set}")
             return None
 
 

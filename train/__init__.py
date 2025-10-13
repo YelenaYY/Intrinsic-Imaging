@@ -1,1 +1,1 @@
-from train.train_decompose import DecomposeTrainer
+from train.train_decomposer import DecomposerTrainer

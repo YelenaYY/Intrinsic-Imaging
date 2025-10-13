@@ -3,6 +3,8 @@ device = "cuda"
 
 [train.decomposer]
 train_datasets = ["datasets/output/motorbike_train"]
+validate_datasets = ["datasets/output/motorbike_val"]
+test_datasets = ["datasets/output/motorbike_test"]
 light_array = "datasets/arrays/shader.npy"
 
 learning_rate = 0.01
@@ -10,5 +12,11 @@ light_loss_coef = 0.01
 
 checkpoints_folder = "checkpoints/decomposer"
 log_folder = "logs/train_decomposer"
-epochs = 1
+epochs = 10
+
+[test.decomposer]
+test_datasets = ["datasets/output/motorbike_test"]
+light_array = "datasets/arrays/shader.npy"
+output_folder = "output/decomposer"
+
 
