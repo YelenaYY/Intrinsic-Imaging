@@ -1,0 +1,1 @@
+from train.train_decompose import DecomposeTrainer
