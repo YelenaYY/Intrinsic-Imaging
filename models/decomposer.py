@@ -59,14 +59,13 @@ class Decomposer(nn.Module):
         
         self.upsampler = nn.Upsample(scale_factor=2, mode='nearest')
         
-        # Lights encoder
         self.lights_encoder = nn.ModuleList([
             nn.Sequential(nn.Conv2d(256, 128, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(128)),
-            nn.Sequential(nn.Conv2d(128, 64, kernel_size=3, stride=2, padding=1), nn.BatchNorm2d(64)),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1)
+            nn.Conv2d(128, 64, kernel_size=3, stride=2, padding=1)
         ])
         
-        self.lights_fc1 = nn.Linear(64 * 2 * 2, 32)
+        lights_encoded_dim = 2
+        self.lights_fc1 = nn.Linear(64 * (lights_encoded_dim ** 2), 32)
         self.lights_fc2 = nn.Linear(32, lights_dim)
     
     def decode_branch(self, decoder, encoded, x):
@@ -129,6 +128,6 @@ class Decomposer(nn.Module):
         mask_bool = mask < 0.25
         reflectance[mask_bool] = 0
         normals_normalized[mask_bool] = 0
-        depth[mask_bool[:, 0]] = 0
+        depth[mask_bool[:, 0:1]] = 0
         
         return reflectance, depth, normals_normalized, lights

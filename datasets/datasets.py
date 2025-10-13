@@ -18,34 +18,41 @@ class IntrinsicDataset(Dataset):
     def __getitem__(self, idx):
         img_set = self.data[idx]
 
-        mask = decode_image(img_set['mask'], mode='RGB') / 255.0
-        reflectance = decode_image(img_set['reflectance'], mode='RGB') / 255.0
-        shading = decode_image(img_set['shading'], mode='RGB') / 255.0
-        # element-wise multiply
-        reconstructed = reflectance * shading
+        try:
+            mask = decode_image(img_set['mask'], mode='RGB') / 255.0
+            reflectance = decode_image(img_set['reflectance'], mode='RGB') / 255.0
+            shading = decode_image(img_set['shading'], mode='RGB') / 255.0
+            # element-wise multiply
+            reconstructed = reflectance * shading
 
-        shading = shading[0, :, :] # take only the first channel
+            shading = shading[0, :, :] # take only the first channel
 
-        normals = decode_image(img_set['normals'], mode='RGB') / 255.0
-        
-        # apply normalization to the normals
-        normal_transform = transforms.Lambda(lambda img: (
-            mask := img.pow(2).sum(0, keepdim=True) > 0.01,
-            img.where(~mask.expand_as(img), (img - 0.5) * 2.0)
-        )[1])
-        normals = normal_transform(normals)
+            normals = decode_image(img_set['normals'], mode='RGB') / 255.0
+            
+            # apply normalization to the normals
+            normal_transform = transforms.Lambda(lambda img: (
+                mask := img.pow(2).sum(0, keepdim=True) > 0.01,
+                img.where(~mask.expand_as(img), (img - 0.5) * 2.0)
+            )[1])
+            normals = normal_transform(normals)
 
-        depth = decode_image(img_set['depth'], mode='RGB') / 255.0
-        depth = 1 - depth[0, :, :] # invert the depth
+            depth = decode_image(img_set['depth'], mode='RGB') / 255.0
+            depth = 1 - depth[0, :, :] # invert the depth
+            depth = depth.unsqueeze(0)
 
 
-        specular = decode_image(img_set['specular'], mode='RGB') / 255.0
+            specular = decode_image(img_set['specular'], mode='RGB') / 255.0
 
-        lights = torch.from_numpy(self.light[idx, :])
+            lights = torch.from_numpy(self.light[idx, :]).to(torch.float32)
 
-        composite = decode_image(img_set['composite'], mode='RGB') / 255.0
+            composite = decode_image(img_set['composite'], mode='RGB') / 255.0
+        except Exception as e:
+            print(e)
+            print(f"Mask path: {img_set['mask']}")
+            return None
 
-        return mask, reconstructed, reflectance, shading, normals, depth,  specular, composite, lights,
+
+        return mask, reconstructed, reflectance, shading, normals, depth,  specular, composite, lights
 
 
     def _load_one_dataset(self, dataset_path):
@@ -53,6 +60,7 @@ class IntrinsicDataset(Dataset):
 
         paths = os.listdir(dataset_path)
 
+        index_set = set()
         for path in paths:
             # find the index in the filename before first _
             index = path.find('_')
@@ -66,7 +74,6 @@ class IntrinsicDataset(Dataset):
             else:
                 continue
 
-            index_set = set()
             if index not in index_set:
                 index_set.add(index)
 
@@ -94,7 +101,7 @@ class IntrinsicDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = IntrinsicDataset(dataset_paths=["datasets/output/cube", "datasets/output/sphere"], light_path="datasets/arrays/shader.npy")
+    dataset = IntrinsicDataset(dataset_paths=["datasets/output/motorbike_train"], light_path="datasets/arrays/shader.npy")
     print("len(dataset)", len(dataset))
     print("Showing images from first index")
     mask, reconstructed, reflectance, shading, normals, depth, specular, composite, lights = dataset[0]

@@ -31,7 +31,7 @@ def decompose_trainer(config):
         dataset_paths=train_datasets,
         light_path=light_array
     )
-    dataloader = DataLoader(dataset, batch_size=4, num_workers=4)
+    dataloader = DataLoader(dataset, batch_size=4, num_workers=1)
     trainer = DecomposeTrainer(model, epochs, learning_rate, light_loss_coef, log_folder, checkpoints_folder)
     trainer.train(dataloader)
 

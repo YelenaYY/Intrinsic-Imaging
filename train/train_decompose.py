@@ -51,13 +51,16 @@ class DecomposeTrainer:
                 pbar = tqdm.tqdm(total=len(train_loader), desc=f"Training epoch {epoch}")
 
                 self.model.train()
-                for batch in train_loader:
+                for i, batch in enumerate(train_loader):
                     self.optimizer.zero_grad()
                     mask, reconstructed, reflectance, _, normals, depth, _, _, lights = batch
                     img = reconstructed.to(self.device)
+                    reflectance = reflectance.to(self.device)
                     mask = mask.to(self.device)
+                    depth = depth.to(self.device)
+                    normals = normals.to(self.device)
+                    lights = lights.to(self.device)
                     predicted_reflectance, predicted_depth, predicted_normals, predicted_lights = self.model(img, mask)
-
                     loss = self.loss_fn(
                         predicted_reflectance, predicted_depth, predicted_normals, predicted_lights,
                         reflectance, depth, normals, lights
@@ -66,10 +69,10 @@ class DecomposeTrainer:
                     loss.backward()
                     self.optimizer.step()
 
-                    writer.writerow([epoch, loss.item()])
-
-                pbar.set_description(f"Training loss: {loss.item()}")
-                pbar.update(1)
+                    if i % 100 == 0:
+                        writer.writerow([epoch, loss.item()])
+                    pbar.update(1)
+                    pbar.set_description(f"Training loss: {loss.item()}")
 
                 torch.save(self.model.state_dict(), os.path.join(checkpoint_folder, f"model_{epoch}.pth"))
 
