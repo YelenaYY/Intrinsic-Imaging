@@ -1,0 +1,15 @@
+name: cv
+channels:
+  - conda-forge
+dependencies:
+  - jupyter
+  - matplotlib-base
+  - numpy
+  - pandas
+  - pillow
+  - python=3.10
+  - pytorch
+  - scikit-image
+  - scipy
+  - torchvision
+  - tqdm
