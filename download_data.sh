@@ -21,6 +21,8 @@ else
                         echo "Extracting to "datasets/output/${filename}"..."
                         ## extract tar
                         tar xf ${filename}.tar.gz 
+
+                        mkdir -p datasets/output/
                         ## move to data folder
                         mv ${filename} datasets/output/${filename}
                         ## remove tar
