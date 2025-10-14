@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import datetime
 
 import torch
 from torch.utils.data import DataLoader
@@ -8,21 +7,8 @@ import matplotlib.pyplot as plt
 
 from models import Decomposer
 from datasets import IntrinsicDataset
+from utils.checkpoint import find_lastest_checkpoint
 
-def find_lastest_checkpoint(folder):
-    folders = list(Path(folder).glob("*"))
-    # parse folder name as time and sort by folder name
-    folders.sort(key=lambda x: datetime.strptime(x.name, "%Y-%m-%d_%H-%M"))
-
-    for folder in folders:
-        checkpoints = list(Path(folder).glob("*.pth"))
-        if len(checkpoints) > 0:
-            # sort by checkpoint name
-            checkpoints.sort(key=lambda x: x.name)
-            print(f"Found checkpoint: {checkpoints[-1]}")
-            return checkpoints[-1]
-    
-    raise ValueError("No checkpoint found")
 
 
 class DecomposerTester:
@@ -38,7 +24,11 @@ class DecomposerTester:
         self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array), batch_size=1, shuffle=False)
 
         self.model = Decomposer(lights_dim=4).to(self.device)
-        self.model.load_state_dict(torch.load(find_lastest_checkpoint(self.checkpoints_folder)))
+
+        latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
+        print(f"Loading checkpoint: {latest_checkpoint}")
+        print(f"Checkpoint number: {checkpoint_number}")
+        self.model.load_state_dict(torch.load(latest_checkpoint))
 
 
     def test(self):

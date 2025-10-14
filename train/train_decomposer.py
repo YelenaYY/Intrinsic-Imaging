@@ -11,7 +11,7 @@ import tqdm
 
 from models import Decomposer
 from datasets import IntrinsicDataset
-
+from utils.checkpoint import find_lastest_checkpoint
 
 class DecomposerTrainer:
     def __init__(self, config):
@@ -23,8 +23,8 @@ class DecomposerTrainer:
         checkpoints_folder = config["train"]["decomposer"]["checkpoints_folder"]
         train_datasets = config["train"]["decomposer"]["train_datasets"]
         validate_datasets = config["train"]["decomposer"]["validate_datasets"]
-        test_datasets = config["train"]["decomposer"]["test_datasets"]
         light_array = config["train"]["decomposer"]["light_array"]
+        load_latest_checkpoint = config["train"]["load_latest_checkpoint"]
 
         self.device = config["train"]["device"]
         print(f"Using device: {self.device}")
@@ -33,11 +33,11 @@ class DecomposerTrainer:
         # Setup datasets and dataloaders
         train_dataset = IntrinsicDataset(train_datasets, light_array)
         validate_dataset = IntrinsicDataset(validate_datasets, light_array)
-        test_dataset = IntrinsicDataset(test_datasets, light_array)
+        print(f"Train dataset size: {len(train_dataset)}")
+        print(f"Train dataset size: {len(train_dataset)}")
 
         self.train_loader = DataLoader(train_dataset, batch_size=4, num_workers=4)
         self.validate_loader = DataLoader(validate_dataset, batch_size=4, num_workers=4)
-        self.test_loader = DataLoader(test_dataset, batch_size=4, num_workers=4)
 
         # Setup model
         self.model = Decomposer(lights_dim=4).to(self.device)
@@ -49,10 +49,18 @@ class DecomposerTrainer:
         self.log_folder = log_folder
         self.checkpoints_folder = checkpoints_folder
         self.epochs = epochs
+        self.checkpoint_number = 0
 
         # Setup log folder and checkpoints folder
         Path(self.log_folder).mkdir(parents=True, exist_ok=True)
         Path(self.checkpoints_folder).mkdir(parents=True, exist_ok=True)
+
+        if load_latest_checkpoint:
+            latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
+            print(f"Loading checkpoint: {latest_checkpoint}")
+            print(f"Last Checkpoint number: {checkpoint_number}")
+            self.model.load_state_dict(torch.load(latest_checkpoint, map_location=self.device))
+            self.checkpoint_number = checkpoint_number + 1
 
     def compute_loss(self, batch):
         mask, reconstructed, reflectance, _, normals, depth, _, _, lights = batch
@@ -90,7 +98,7 @@ class DecomposerTrainer:
         with open(filename, 'w') as f:
             writer = csv.writer(f)
             writer.writerow(header)
-            for epoch in range(self.epochs):
+            for epoch in range(self.checkpoint_number, self.epochs):
                 pbar = tqdm.tqdm(total=len(self.train_loader), desc=f"Training epoch {epoch}")
 
                 self.model.train()
@@ -103,7 +111,7 @@ class DecomposerTrainer:
                     self.optimizer.step()
 
                     if i % 100 == 0:
-                        pbar.set_description(f"Epoch {epoch} Loss: {loss.item()}")
+                        pbar.set_description(f"Epoch {epoch} Loss: {loss.item():.4f}")
                     pbar.update(1)
 
                 pbar.close()
@@ -122,7 +130,4 @@ class DecomposerTrainer:
                 
                 pbar.close()
                 torch.save(self.model.state_dict(), os.path.join(checkpoint_folder, f"model_{epoch}.pth"))
-
                 writer.writerow([epoch, total_training_loss/len(self.train_loader), total_validation_loss/len(self.validate_loader)])
-
-            pbar.close()

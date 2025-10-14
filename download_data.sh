@@ -20,7 +20,7 @@ else
                         wget rin.csail.mit.edu/data/${filename}.tar.gz; 
                         echo "Extracting to "datasets/output/${filename}"..."
                         ## extract tar
-                        tar xf ${filename}.tar.gz 
+                        tar -vxf ${filename}.tar.gz 
 
                         mkdir -p datasets/output/
                         ## move to data folder
@@ -38,5 +38,11 @@ else
                 echo "Please answer yes or no.";;
 
         esac
+    done
+
+    # rm problematic images 11150* to 11154* in datasets/output/motorbike_train
+    for i in {11150..11154}
+    do
+        rm datasets/output/motorbike_train/${i}*
     done
 fi

@@ -1,5 +1,6 @@
 [train]
 device = "cuda"
+load_latest_checkpoint = true
 
 [train.decomposer]
 train_datasets = ["datasets/output/motorbike_train"]
@@ -12,11 +13,12 @@ light_loss_coef = 0.01
 
 checkpoints_folder = "checkpoints/decomposer"
 log_folder = "logs/train_decomposer"
-epochs = 10
+epochs = 100
 
 [test.decomposer]
 test_datasets = ["datasets/output/motorbike_test"]
 light_array = "datasets/arrays/shader.npy"
 output_folder = "output/decomposer"
+
 
 
