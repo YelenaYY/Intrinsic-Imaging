@@ -36,8 +36,8 @@ class DecomposerTrainer:
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Train dataset size: {len(train_dataset)}")
 
-        self.train_loader = DataLoader(train_dataset, batch_size=4, num_workers=4)
-        self.validate_loader = DataLoader(validate_dataset, batch_size=4, num_workers=4)
+        self.train_loader = DataLoader(train_dataset, batch_size=4, num_workers=2)
+        self.validate_loader = DataLoader(validate_dataset, batch_size=4, num_workers=2)
 
         # Setup model
         self.model = Decomposer(lights_dim=4).to(self.device)
