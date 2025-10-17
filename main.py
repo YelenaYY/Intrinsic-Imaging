@@ -8,8 +8,6 @@ parser.add_argument("--test", action="store_true")
 args = parser.parse_args()
 
 
-
-
 def decompose_trainer(config):
     from train import DecomposerTrainer
     trainer = DecomposerTrainer(config)
@@ -19,6 +17,16 @@ def decompose_tester(config):
     from inference import DecomposerTester
     tester = DecomposerTester(config)
     tester.test()
+
+def composer_trainer(config):
+    from train import ComposerTrainer
+    trainer = ComposerTrainer(config)
+    trainer.train()
+
+def shader_trainer(config):
+    from train import ShaderTrainer
+    trainer = ShaderTrainer(config)
+    trainer.train()
 
 if __name__ == "__main__":
     with open(args.config, "rb") as f:
@@ -30,4 +38,20 @@ if __name__ == "__main__":
             else:
                 print("Training...")
                 decompose_trainer(config)
-
+        elif args.model == "composer":
+            if args.test:
+                print("Testing...")
+                composer_tester(config)
+            else:
+                print("Training...")
+                composer_trainer(config)
+        elif args.model == "shader":
+            if args.test:
+                print("Testing...")
+                shader_tester(config)
+            else:
+                print("Training...")
+                shader_trainer(config)
+        else:
+            print("Invalid model")
+            exit(1)

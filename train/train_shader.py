@@ -1,0 +1,165 @@
+# train_shader.py
+import os
+import sys
+from pathlib import Path
+from datetime import datetime
+import csv
+
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import torch
+import torch.nn as nn
+from torch.optim import Adam
+from torch.utils.data import DataLoader
+import tqdm
+
+from models import NeuralShader
+from datasets import IntrinsicDataset
+from utils.checkpoint import find_lastest_checkpoint
+
+def normalize_normals(n):
+    mag = n.pow(2).sum(1, keepdim=True).sqrt().clamp_min(1e-6)
+    return n / mag
+
+def masked_l1(pred, target, mask_bool):
+    # pred/target: (B,1,H,W), mask_bool: (B,1,H,W) bool
+    m = mask_bool.expand_as(pred)
+    num = m.sum().clamp_min(1)
+    return (pred[m] - target[m]).abs().sum() / num
+
+class ShaderTrainer:
+    def __init__(self, config):
+        self.device = config["train"]["device"]
+        print(f"Using device: {self.device}")
+
+        # read config
+        scfg = config["train"]["shader"]
+        epochs = scfg["epochs"]
+        learning_rate = scfg["learning_rate"]
+        log_folder = scfg["log_folder"]
+        checkpoints_folder = scfg["checkpoints_folder"]
+        train_datasets = scfg["train_datasets"]
+        validate_datasets = scfg["validate_datasets"]
+        light_array = scfg["light_array"]
+        load_latest_checkpoint = config["train"]["load_latest_checkpoint"]
+        batch_size = scfg.get("batch_size", 4)
+        lights_dim = scfg.get("lights_dim", 4)
+        expand_dim = scfg.get("expand_dim", 8)
+
+        # datasets
+        train_dataset = IntrinsicDataset(train_datasets, light_array)
+        validate_dataset = IntrinsicDataset(validate_datasets, light_array)
+        print(f"Train dataset size: {len(train_dataset)}")
+        print(f"Val   dataset size: {len(validate_dataset)}")
+
+        self.train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=2, shuffle=True, pin_memory=True)
+        self.validate_loader = DataLoader(validate_dataset, batch_size=batch_size, num_workers=2, shuffle=False, pin_memory=True)
+
+        # model
+        self.model = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
+
+        # optim/loss
+        self.optimizer = Adam(self.model.parameters(), lr=learning_rate)
+        self.epochs = epochs
+        self.checkpoint_number = 0
+
+        # io
+        self.log_folder = log_folder
+        self.checkpoints_folder = checkpoints_folder
+        Path(self.log_folder).mkdir(parents=True, exist_ok=True)
+        Path(self.checkpoints_folder).mkdir(parents=True, exist_ok=True)
+
+        if load_latest_checkpoint:
+            latest, ckpt_num = find_lastest_checkpoint(self.checkpoints_folder)
+            if latest is not None:
+                print(f"Loading checkpoint: {latest}")
+                print(f"Last Checkpoint number: {ckpt_num}")
+                self.model.load_state_dict(torch.load(latest, map_location=self.device))
+                self.checkpoint_number = ckpt_num + 1
+
+    @torch.no_grad()
+    def _make_fg(self, mask3):
+        # mask3: (B,3,H,W), foreground if any channel >= 0.25
+        return (mask3 >= 0.25).any(dim=1, keepdim=True)
+
+    def _safe_divide(self, num, den, eps=1e-3):
+        return num / (den.abs().clamp_min(eps))
+
+    def _compute_shading_gt(self, image, reflectance, mask3):
+        # image: (B,3,H,W), reflectance: (B,3,H,W)
+        # grayscale shading target from I/R; average across RGB
+        fg = self._make_fg(mask3)
+        S_rgb = self._safe_divide(image, reflectance.clamp_min(1e-3))
+        S_gray = S_rgb.mean(dim=1, keepdim=True)
+        # optional clamp to [0,1]
+        return S_gray.clamp(0, 1), fg
+
+    def compute_loss(self, batch):
+        # batch tuple order from your DecomposerTrainer: 
+        # mask, reconstructed(I), reflectance, _, normals, depth, _, _, lights
+        mask, I, R, _, N, _, _, _, L = batch
+        I = I.to(self.device)
+        R = R.to(self.device)
+        N = N.to(self.device)
+        L = L.to(self.device)
+        mask = mask.to(self.device)
+
+        # targets
+        S_gt, fg = self._compute_shading_gt(I, R, mask)
+        N = normalize_normals(N)
+
+        # predict
+        S_hat = self.model(N, L)
+
+        # loss
+        return masked_l1(S_hat, S_gt, fg)
+
+    def train(self):
+        header = ['epoch', 'train_loss', 'val_loss']
+        time = datetime.now().strftime('%Y-%m-%d_%H-%M')
+        filename = os.path.join(self.log_folder, f"train_shader_{time}.csv")
+        ckpt_dir = os.path.join(self.checkpoints_folder, time)
+        Path(ckpt_dir).mkdir(parents=True, exist_ok=True)
+
+        with open(filename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            for epoch in range(self.checkpoint_number, self.epochs):
+                # ---- train
+                pbar = tqdm.tqdm(total=len(self.train_loader), desc=f"[Shader] Train {epoch}")
+                self.model.train()
+                total_tr = 0.0
+                for i, batch in enumerate(self.train_loader):
+                    self.optimizer.zero_grad(set_to_none=True)
+                    loss = self.compute_loss(batch)
+                    total_tr += loss.item()
+                    loss.backward()
+                    self.optimizer.step()
+                    if i % 100 == 0:
+                        pbar.set_description(f"[Shader] Ep{epoch} L:{loss.item():.4f}")
+                    pbar.update(1)
+                pbar.close()
+
+                # ---- val
+                pbar = tqdm.tqdm(total=len(self.validate_loader), desc=f"[Shader] Val   {epoch}")
+                self.model.eval()
+                total_val = 0.0
+                with torch.no_grad():
+                    for batch in self.validate_loader:
+                        loss = self.compute_loss(batch)
+                        total_val += loss.item()
+                        pbar.update(1)
+                pbar.close()
+
+                # ---- save
+                torch.save(self.model.state_dict(), os.path.join(ckpt_dir, f"model_{epoch}.pth"))
+                writer.writerow([epoch, total_tr/len(self.train_loader), total_val/len(self.validate_loader)])
+                f.flush()
+
+if __name__ == "__main__":
+    # Expect a small loader that gives you a `config` dict (toml/yaml already loaded)
+    import tomli
+    with open("config.toml", "rb") as cf:
+        config = tomli.load(cf)
+    ShaderTrainer(config).train()

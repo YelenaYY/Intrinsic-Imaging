@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from decomposer import Decomposer
-from shader import NeuralShader
+from .decomposer import Decomposer
+from .shader import NeuralShader
 
 
 class Composer(nn.Module):

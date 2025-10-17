@@ -1,7 +1,8 @@
 [train]
-device = "cuda"
+device = "cpu" # or "cpu"
 load_latest_checkpoint = true
 
+# Decomposer
 [train.decomposer]
 train_datasets = ["datasets/output/motorbike_train"]
 validate_datasets = ["datasets/output/motorbike_val"]
@@ -20,5 +21,31 @@ test_datasets = ["datasets/output/motorbike_test"]
 light_array = "datasets/arrays/shader.npy"
 output_folder = "output/decomposer"
 
+# Shader
+[train.shader]
+train_datasets     = ["datasets/output/motorbike_train"]
+validate_datasets  = ["datasets/output/motorbike_val"]
+light_array        = "datasets/arrays/shader.npy"
 
+learning_rate      = 1e-4
+checkpoints_folder = "checkpoints/shader"
+log_folder         = "logs/train_shader"
+epochs             = 50
+batch_size         = 8
+lights_dim         = 4
+expand_dim         = 8
 
+#Composer (self-supervised)
+[train.composer]
+train_datasets     = ["datasets/output/motorbike_train"]
+validate_datasets  = ["datasets/output/motorbike_val"]
+light_array        = "datasets/arrays/shader.npy"
+
+learning_rate      = 5e-5
+checkpoints_folder = "checkpoints/composer"
+log_folder         = "logs/train_composer"
+epochs             = 30
+batch_size         = 8
+lights_dim         = 4
+expand_dim         = 8
+freeze_shader      = true
