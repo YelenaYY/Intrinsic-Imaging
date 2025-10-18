@@ -126,7 +126,7 @@ class ShaderTrainer:
             writer = csv.writer(f)
             writer.writerow(header)
             for epoch in range(self.checkpoint_number, self.epochs):
-                # ---- train
+                # train
                 pbar = tqdm.tqdm(total=len(self.train_loader), desc=f"[Shader] Train {epoch}")
                 self.model.train()
                 total_tr = 0.0
@@ -141,7 +141,7 @@ class ShaderTrainer:
                     pbar.update(1)
                 pbar.close()
 
-                # ---- val
+                # val
                 pbar = tqdm.tqdm(total=len(self.validate_loader), desc=f"[Shader] Val   {epoch}")
                 self.model.eval()
                 total_val = 0.0
@@ -152,7 +152,7 @@ class ShaderTrainer:
                         pbar.update(1)
                 pbar.close()
 
-                # ---- save
+                # save
                 torch.save(self.model.state_dict(), os.path.join(ckpt_dir, f"model_{epoch}.pth"))
                 writer.writerow([epoch, total_tr/len(self.train_loader), total_val/len(self.validate_loader)])
                 f.flush()

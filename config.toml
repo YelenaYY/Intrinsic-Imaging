@@ -1,6 +1,6 @@
 [train]
-device = "cpu" # or "cpu"
-load_latest_checkpoint = true
+device = "cuda" # "cuda" or "cpu"
+load_latest_checkpoint = false
 
 # Decomposer
 [train.decomposer]
@@ -30,7 +30,7 @@ light_array        = "datasets/arrays/shader.npy"
 learning_rate      = 1e-4
 checkpoints_folder = "checkpoints/shader"
 log_folder         = "logs/train_shader"
-epochs             = 50
+epochs             = 5
 batch_size         = 8
 lights_dim         = 4
 expand_dim         = 8
