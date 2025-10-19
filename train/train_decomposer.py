@@ -44,7 +44,9 @@ class DecomposerTrainer:
         self.validate_loader = DataLoader(validate_dataset, batch_size=4, num_workers=2)
 
         # Setup model
-        self.model = Decomposer(lights_dim=4).to(self.device)
+        lights_dim = config["train"]["decomposer"].get("lights_dim", 4)
+        num_lights = config["train"]["decomposer"].get("num_lights", 1)
+        self.model = Decomposer(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
 
         # Setup optimizer and criterion
         self.optimizer = Adam(self.model.parameters(), lr=learning_rate)
@@ -135,3 +137,10 @@ class DecomposerTrainer:
                 pbar.close()
                 torch.save(self.model.state_dict(), os.path.join(checkpoint_folder, f"model_{epoch}.pth"))
                 writer.writerow([epoch, total_training_loss/len(self.train_loader), total_validation_loss/len(self.validate_loader)])
+
+if __name__ == "__main__":
+    # Expect a small loader that gives you a `config` dict (toml/yaml already loaded)
+    import tomli
+    with open("config.toml", "rb") as cf:
+        config = tomli.load(cf)
+    DecomposerTrainer(config).train()
