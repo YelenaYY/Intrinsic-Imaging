@@ -67,6 +67,7 @@ batch_size         = 8
 lights_dim         = 4
 expand_dim         = 8
 # freeze_shader      = true
+light_loss_coef = 0.01
 unlabel_loss_coef  = 1.0
 labeled_loss_coef  = 1.0
 schedule = [["normals", 0, 30]] # means update norms decoder from epoch 0 to 30, could add more items to the list to update more decoders

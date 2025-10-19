@@ -117,6 +117,7 @@ class ComposerTrainer:
         self.criterion = nn.MSELoss()
         self.unlabel_loss_coef = composer_config.get("unlabel_loss_coef", 1.0)
         self.labeled_loss_coef = composer_config.get("labeled_loss_coef", 1.0)
+        self.light_loss_coef = composer_config.get("light_loss_coef", 1.0)
 
         # misc
         self.epochs = epochs
@@ -155,7 +156,7 @@ class ComposerTrainer:
         labeled, unlabeled = batch
 
         unlabeled_mask, unlabeled_reconstructed, _, _, _, _, _, _, _ = unlabeled
-        labeled_mask, labeled_reconstructed, labeled_reflectance, labeled_shading, labeled_normals, labeled_depth, labeled_specular, labeled_composite, labeled_lights = labeled
+        labeled_mask, labeled_reconstructed, labeled_reflectance, labeled_shading, labeled_normals, labeled_depth, _, _, labeled_lights = labeled
 
         unlabeled_mask = unlabeled_mask.to(self.device)
         unlabeled_reconstructed = unlabeled_reconstructed.to(self.device)
@@ -166,8 +167,8 @@ class ComposerTrainer:
         labeled_shading = labeled_shading.to(self.device)
         labeled_normals = labeled_normals.to(self.device)
         labeled_depth = labeled_depth.to(self.device)
-        labeled_specular = labeled_specular.to(self.device)
-        labeled_composite = labeled_composite.to(self.device)
+        # labeled_specular = labeled_specular.to(self.device)
+        # labeled_composite = labeled_composite.to(self.device)
         labeled_lights = labeled_lights.to(self.device)
 
         # unlabel prediction
@@ -179,13 +180,13 @@ class ComposerTrainer:
         unlabel_loss = self.criterion(unlabeled_prediction["reconstructed"], unlabeled_reconstructed)
 
         # labeled loss
-        reconstruct_loss = self.criterion(labeled_prediction["reconstructed"], labeled_reconstructed)
         reflectance_loss = self.criterion(labeled_prediction["reflectance"], labeled_reflectance)
         shading_loss = self.criterion(labeled_prediction["shading"], labeled_shading.repeat(1, 3, 1, 1))
-        depth_loss = self.criterion(labeled_prediction["depth"], labeled_depth)
+        # depth_loss = self.criterion(labeled_prediction["depth"], labeled_depth)
+        normals_loss = self.criterion(labeled_prediction["normals"], labeled_normals)
         lights_loss = self.criterion(labeled_prediction["lights"], labeled_lights)
 
-        labeled_loss = reconstruct_loss + reflectance_loss + shading_loss + depth_loss + lights_loss
+        labeled_loss = reflectance_loss + shading_loss + normals_loss + lights_loss * self.light_loss_coef
 
         loss = self.unlabel_loss_coef * unlabel_loss + self.labeled_loss_coef * labeled_loss
 
