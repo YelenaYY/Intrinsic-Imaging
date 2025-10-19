@@ -28,9 +28,22 @@ def shader_trainer(config):
     trainer = ShaderTrainer(config)
     trainer.train()
 
+def shader_tester(config):
+    from inference import ShaderTester
+    tester = ShaderTester(config)
+    tester.test()
+
 if __name__ == "__main__":
     with open(args.config, "rb") as f:
         config = tomli.load(f)
+
+        if config["train"]["device"] == "cuda":
+            import torch
+            # check if cuda is available
+            if not torch.cuda.is_available():
+                print("CUDA is not available")
+                exit(1)
+
         if args.model == "decomposer":
             if args.test:
                 print("Testing...")

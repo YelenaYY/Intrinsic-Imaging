@@ -28,7 +28,7 @@ class DecomposerTrainer:
         train_datasets = config["train"]["decomposer"]["train_datasets"]
         validate_datasets = config["train"]["decomposer"]["validate_datasets"]
         light_array = config["train"]["decomposer"]["light_array"]
-        load_latest_checkpoint = config["train"]["load_latest_checkpoint"]
+        load_latest_checkpoint = config["train"]["decomposer"]["load_latest_checkpoint"]
 
         self.device = config["train"]["device"]
         print(f"Using device: {self.device}")

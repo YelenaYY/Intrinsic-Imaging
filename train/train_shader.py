@@ -14,19 +14,12 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 import tqdm
 
-from models import NeuralShader
+from models import NeuralShader, NeuralShaderVariant
 from datasets import IntrinsicDataset
-from utils.checkpoint import find_lastest_checkpoint
+from utils import find_lastest_checkpoint #,normalize_normals, masked_l1, compute_shading_gt
 
-def normalize_normals(n):
-    mag = n.pow(2).sum(1, keepdim=True).sqrt().clamp_min(1e-6)
-    return n / mag
 
-def masked_l1(pred, target, mask_bool):
-    # pred/target: (B,1,H,W), mask_bool: (B,1,H,W) bool
-    m = mask_bool.expand_as(pred)
-    num = m.sum().clamp_min(1)
-    return (pred[m] - target[m]).abs().sum() / num
+
 
 class ShaderTrainer:
     def __init__(self, config):
@@ -42,10 +35,11 @@ class ShaderTrainer:
         train_datasets = scfg["train_datasets"]
         validate_datasets = scfg["validate_datasets"]
         light_array = scfg["light_array"]
-        load_latest_checkpoint = config["train"]["load_latest_checkpoint"]
+        load_latest_checkpoint = scfg["load_latest_checkpoint"]
         batch_size = scfg.get("batch_size", 4)
         lights_dim = scfg.get("lights_dim", 4)
         expand_dim = scfg.get("expand_dim", 8)
+        use_variant = scfg.get("use_variant", False)
 
         # datasets
         train_dataset = IntrinsicDataset(train_datasets, light_array)
@@ -57,7 +51,12 @@ class ShaderTrainer:
         self.validate_loader = DataLoader(validate_dataset, batch_size=batch_size, num_workers=2, shuffle=False, pin_memory=True)
 
         # model
-        self.model = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
+        if not use_variant:
+            print("Using standard shader")
+            self.model = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
+        else:
+            print("Using variant shader")
+            self.model = NeuralShaderVariant(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
 
         # optim/loss
         self.optimizer = Adam(self.model.parameters(), lr=learning_rate)
@@ -78,42 +77,43 @@ class ShaderTrainer:
                 self.model.load_state_dict(torch.load(latest, map_location=self.device))
                 self.checkpoint_number = ckpt_num + 1
 
-    @torch.no_grad()
-    def _make_fg(self, mask3):
-        # mask3: (B,3,H,W), foreground if any channel >= 0.25
-        return (mask3 >= 0.25).any(dim=1, keepdim=True)
+    # @torch.no_grad()
+    # def _make_fg(self, mask3):
+    #     # mask3: (B,3,H,W), foreground if any channel >= 0.25
+    #     return (mask3 >= 0.25).any(dim=1, keepdim=True)
 
-    def _safe_divide(self, num, den, eps=1e-3):
-        return num / (den.abs().clamp_min(eps))
+    # def _safe_divide(self, num, den, eps=1e-3):
+    #     return num / (den.abs().clamp_min(eps))
 
-    def _compute_shading_gt(self, image, reflectance, mask3):
-        # image: (B,3,H,W), reflectance: (B,3,H,W)
-        # grayscale shading target from I/R; average across RGB
-        fg = self._make_fg(mask3)
-        S_rgb = self._safe_divide(image, reflectance.clamp_min(1e-3))
-        S_gray = S_rgb.mean(dim=1, keepdim=True)
-        # optional clamp to [0,1]
-        return S_gray.clamp(0, 1), fg
+    # def _compute_shading_gt(self, image, reflectance, mask3):
+    #     # image: (B,3,H,W), reflectance: (B,3,H,W)
+    #     # grayscale shading target from I/R; average across RGB
+    #     fg = self._make_fg(mask3)
+    #     S_rgb = self._safe_divide(image, reflectance.clamp_min(1e-3))
+    #     S_gray = S_rgb.mean(dim=1, keepdim=True)
+    #     # optional clamp to [0,1]
+    #     return S_gray.clamp(0, 1), fg
 
     def compute_loss(self, batch):
         # batch tuple order from your DecomposerTrainer: 
-        # mask, reconstructed(I), reflectance, _, normals, depth, _, _, lights
-        mask, I, R, _, N, _, _, _, L = batch
-        I = I.to(self.device)
-        R = R.to(self.device)
+        # mask, reconstructed(I), reflectance, shading, normals, depth, _, _, lights
+        _, _, _, S, N, _, _, _, L = batch
+        # I = I.to(self.device)
+        S = S.to(self.device)
         N = N.to(self.device)
         L = L.to(self.device)
-        mask = mask.to(self.device)
+        # mask = mask.to(self.device)
 
         # targets
-        S_gt, fg = self._compute_shading_gt(I, R, mask)
-        N = normalize_normals(N)
+        # S_gt, fg = compute_shading_gt(I, R, mask)
+        # N = normalize_normals(N)
 
         # predict
         S_hat = self.model(N, L)
 
         # loss
-        return masked_l1(S_hat, S_gt, fg)
+        # return masked_l1(S_hat, S_gt, fg)
+        return nn.MSELoss()(S_hat, S)
 
     def train(self):
         header = ['epoch', 'train_loss', 'val_loss']

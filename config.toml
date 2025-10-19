@@ -1,9 +1,11 @@
 [train]
-device = "cpu" # or "cpu"
-load_latest_checkpoint = true
+device = "cuda" # or "cpu"
+num_workers = 24 # number of workers for data loading
 
 # Decomposer
 [train.decomposer]
+load_latest_checkpoint = false # set to false to start from scratch
+
 train_datasets = ["datasets/output/motorbike_train"]
 validate_datasets = ["datasets/output/motorbike_val"]
 test_datasets = ["datasets/output/motorbike_test"]
@@ -23,8 +25,10 @@ output_folder = "output/decomposer"
 
 # Shader
 [train.shader]
-train_datasets     = ["datasets/output/motorbike_train"]
-validate_datasets  = ["datasets/output/motorbike_val"]
+load_latest_checkpoint = false # set to false to start from scratch
+
+train_datasets     = ["datasets/output/car_train"]
+validate_datasets  = ["datasets/output/car_val"]
 light_array        = "datasets/arrays/shader.npy"
 
 learning_rate      = 1e-4
@@ -35,17 +39,34 @@ batch_size         = 8
 lights_dim         = 4
 expand_dim         = 8
 
-#Composer (self-supervised)
+use_variant = true # user variant shader
+
+[test.shader]
+test_datasets = ["datasets/output/car_test", "datasets/output/car_train"]
+light_array = "datasets/arrays/shader.npy"
+output_folder = "output/shader"
+
 [train.composer]
-train_datasets     = ["datasets/output/motorbike_train"]
-validate_datasets  = ["datasets/output/motorbike_val"]
+load_latest_checkpoint = false # set to false to start from scratch
+
+learned_decomposer_checkpoint = "checkpoints/decomposer/2025-10-14_21-04/model_99.pth"
+learned_shader_checkpoint = "checkpoints/shader/2025-10-18_09-25/model_29.pth"
+use_shader_variant = true
+
+labeled_train_datasets     = ["datasets/output/cone", "datasets/output/cylinder", "datasets/output/sphere", "datasets/output/torus", "datasets/output/cube"]
+unlabeled_train_datasets     = ["datasets/output/suzanne_train", "datasets/output/teapot_train", "datasets/output/bunny_train"]
+unlabeled_validate_datasets  = ["datasets/output/suzanne_val", "datasets/output/teapot_val", "datasets/output/bunny_val"]
+
 light_array        = "datasets/arrays/shader.npy"
 
-learning_rate      = 5e-5
+learning_rate      = 1e-2
 checkpoints_folder = "checkpoints/composer"
 log_folder         = "logs/train_composer"
 epochs             = 30
 batch_size         = 8
 lights_dim         = 4
 expand_dim         = 8
-freeze_shader      = true
+# freeze_shader      = true
+unlabel_loss_coef  = 1.0
+labeled_loss_coef  = 1.0
+schedule = [["normals", 0, 30]] # means update norms decoder from epoch 0 to 30, could add more items to the list to update more decoders
