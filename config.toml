@@ -9,7 +9,7 @@ load_latest_checkpoint = false # set to false to start from scratch
 train_datasets = ["datasets/output/motorbike_train"]
 validate_datasets = ["datasets/output/motorbike_val"]
 test_datasets = ["datasets/output/motorbike_test"]
-light_array = "datasets/arrays/shader.npy"
+light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 
 learning_rate = 0.01
 light_loss_coef = 0.01
@@ -17,10 +17,12 @@ light_loss_coef = 0.01
 checkpoints_folder = "checkpoints/decomposer"
 log_folder = "logs/train_decomposer"
 epochs = 100
+lights_dim = 4
+num_lights = 2
 
 [test.decomposer]
 test_datasets = ["datasets/output/motorbike_test"]
-light_array = "datasets/arrays/shader.npy"
+light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 output_folder = "output/decomposer"
 
 # Shader
@@ -34,9 +36,10 @@ light_array        = "datasets/arrays/shader.npy"
 learning_rate      = 1e-4
 checkpoints_folder = "checkpoints/shader"
 log_folder         = "logs/train_shader"
-epochs             = 5
+epochs             = 50
 batch_size         = 8
 lights_dim         = 4
+num_lights         = 2
 expand_dim         = 8
 
 use_variant = true # user variant shader
@@ -65,6 +68,7 @@ log_folder         = "logs/train_composer"
 epochs             = 30
 batch_size         = 8
 lights_dim         = 4
+num_lights         = 2
 expand_dim         = 8
 # freeze_shader      = true
 light_loss_coef = 0.01

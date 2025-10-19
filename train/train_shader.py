@@ -38,6 +38,7 @@ class ShaderTrainer:
         load_latest_checkpoint = scfg["load_latest_checkpoint"]
         batch_size = scfg.get("batch_size", 4)
         lights_dim = scfg.get("lights_dim", 4)
+        num_lights = scfg.get("num_lights", 1)
         expand_dim = scfg.get("expand_dim", 8)
         use_variant = scfg.get("use_variant", False)
 
