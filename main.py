@@ -23,6 +23,11 @@ def composer_trainer(config):
     trainer = ComposerTrainer(config)
     trainer.train()
 
+def composer_tester(config):
+    from inference import ComposerTester
+    tester = ComposerTester(config)
+    tester.test()
+
 def shader_trainer(config):
     from train import ShaderTrainer
     trainer = ShaderTrainer(config)

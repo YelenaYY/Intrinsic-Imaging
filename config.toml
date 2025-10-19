@@ -70,3 +70,12 @@ expand_dim         = 8
 unlabel_loss_coef  = 1.0
 labeled_loss_coef  = 1.0
 schedule = [["normals", 0, 30]] # means update norms decoder from epoch 0 to 30, could add more items to the list to update more decoders
+
+[test.composer]
+test_datasets = ["datasets/output/suzanne_test", "datasets/output/teapot_test", "datasets/output/bunny_test"]
+light_array = "datasets/arrays/shader.npy"
+output_folder = "output/composer"
+use_shader_variant = true
+max_num_images_per_dataset = 10
+
+# learned_composer_checkpoint = "checkpoints/composer/2025-10-18_21-42/model_0.pth"
