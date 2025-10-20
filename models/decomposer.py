@@ -10,10 +10,10 @@ class Decomposer(nn.Module):
     - reflectance: same size as input
     - normals: same size as input
     - depth: same HW size as input but with 1 channel
-    - lights: 4d vector
+    - lights: (lights_dim * num_lights)d vector
     """
     
-    def __init__(self, lights_dim=4):
+    def __init__(self, lights_dim=4, num_lights=1):
         super(Decomposer, self).__init__()
         
         self.encoder = nn.ModuleList([
@@ -66,7 +66,8 @@ class Decomposer(nn.Module):
         
         lights_encoded_dim = 2
         self.lights_fc1 = nn.Linear(64 * (lights_encoded_dim ** 2), 32)
-        self.lights_fc2 = nn.Linear(32, lights_dim)
+        total_lights_dim = lights_dim * num_lights
+        self.lights_fc2 = nn.Linear(32, total_lights_dim)
     
     def decode_branch(self, decoder, encoded, x):
         """Decode with skip connections from encoder."""
@@ -91,7 +92,7 @@ class Decomposer(nn.Module):
         - reflectance: (B, 3, H, W)
         - depth: (B, 1, H, W)
         - normals: (B, 3, H, W)
-        - lights: (B, lights_dim)
+        - lights: (B, lights_dim * num_lights)
         """
         # Shared encoding
         x = img

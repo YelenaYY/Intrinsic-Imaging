@@ -23,11 +23,13 @@ class NeuralShader(nn.Module):
     """
     Predicts shading image given shape (normals) and lighting conditions.
     Output: single-channel shading with same HxW as input.
-    Lights: 4D vector [x, y, z, energy].
+    Lights: 4D vector [x, y, z, energy] per light source.
+    For multiple lights: [light1_energy, light1_x, light1_y, light1_z, light2_energy, ...]
     """
 
-    def __init__(self, lights_dim=4, expand_dim=8):
+    def __init__(self, lights_dim=4, expand_dim=8, num_lights=1):
         super(NeuralShader, self).__init__()
+        self.num_lights = num_lights
 
         # Encoder
         channels = [3, 16, 32, 64, 128, 256, 256]
@@ -66,8 +68,10 @@ class NeuralShader(nn.Module):
         ])
 
         # Lights encoder to spatial map
+        # For multiple lights, we process all lights together
         self.expand_dim = expand_dim
-        self.lights_fc = nn.Linear(lights_dim, expand_dim * expand_dim)
+        total_lights_dim = lights_dim * num_lights
+        self.lights_fc = nn.Linear(total_lights_dim, expand_dim * expand_dim)
 
     def forward(self, normals: torch.Tensor, lights: torch.Tensor) -> torch.Tensor:
         x = normals

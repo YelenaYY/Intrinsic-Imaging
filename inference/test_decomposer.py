@@ -23,7 +23,9 @@ class DecomposerTester:
         
         self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array), batch_size=1, shuffle=False)
 
-        self.model = Decomposer(lights_dim=4).to(self.device)
+        lights_dim = config["train"]["decomposer"].get("lights_dim", 4)
+        num_lights = config["train"]["decomposer"].get("num_lights", 1)
+        self.model = Decomposer(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
 
         latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
         print(f"Loading checkpoint: {latest_checkpoint}")
