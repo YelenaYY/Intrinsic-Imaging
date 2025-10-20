@@ -1,3 +1,4 @@
+import torch
 def normalize_normals(n):
     mag = n.pow(2).sum(1, keepdim=True).sqrt().clamp_min(1e-6)
     return n / mag
@@ -26,3 +27,6 @@ def masked_l1(pred, target, mask_bool):
 
 def mask_image(image, mask):
     return image * mask
+
+def float_to_uint8(image):
+    return (image * 255.0).clamp(0, 255).to(torch.uint8)

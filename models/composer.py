@@ -1,10 +1,4 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-from .decomposer import Decomposer
-from .shader import NeuralShader
-from .shader_variant import NeuralShaderVariant
 
 
 class Composer(nn.Module):
@@ -35,10 +29,10 @@ class Composer(nn.Module):
         # shading = torch.sigmoid(shading)
 
         # explicitly repeat the shading to 3 channels
-        shading = shading.repeat(1, 3, 1, 1)
+        shading_3ch = shading.repeat(1, 3, 1, 1)
 
         # Recompose
-        reconstructed = reflectance * shading  # (B,3,H,W) * (B,3,H,W)
+        reconstructed = reflectance * shading_3ch  # (B,3,H,W) * (B,3,H,W)
 
         return {
             "reconstructed": reconstructed,

@@ -46,37 +46,71 @@ test_datasets = ["datasets/output/car_test", "datasets/output/car_train"]
 light_array = "datasets/arrays/shader.npy"
 output_folder = "output/shader"
 
+# General Composer Config
 [train.composer]
-load_latest_checkpoint = false # set to false to start from scratch
+
+# Must be one or two of the following: "shape", "category"
+types_to_train = ["category"] 
 
 learned_decomposer_checkpoint = "checkpoints/decomposer/2025-10-14_21-04/model_99.pth"
 learned_shader_checkpoint = "checkpoints/shader/2025-10-18_09-25/model_29.pth"
 use_shader_variant = true
 
-labeled_train_datasets     = ["datasets/output/cone", "datasets/output/cylinder", "datasets/output/sphere", "datasets/output/torus", "datasets/output/cube"]
-unlabeled_train_datasets     = ["datasets/output/suzanne_train", "datasets/output/teapot_train", "datasets/output/bunny_train"]
-unlabeled_validate_datasets  = ["datasets/output/suzanne_val", "datasets/output/teapot_val", "datasets/output/bunny_val"]
-
 light_array        = "datasets/arrays/shader.npy"
 
 learning_rate      = 1e-2
-checkpoints_folder = "checkpoints/composer"
-log_folder         = "logs/train_composer"
 epochs             = 30
-batch_size         = 8
+batch_size         = 32
 lights_dim         = 4
 expand_dim         = 8
-# freeze_shader      = true
-light_loss_coef = 0.01
+
+light_loss_coef = 1
 unlabel_loss_coef  = 1.0
 labeled_loss_coef  = 1.0
+
+
+# Overwrites general composer config for transfer type == "shape"
+[train.composer.shape]
+load_latest_checkpoint = false # set to false to start from scratch
+checkpoints_folder = "checkpoints/composer_shape"
+log_folder         = "logs/train_composer_shape"
+
+labeled_train_datasets     = ["datasets/output/cone", "datasets/output/cylinder", "datasets/output/sphere", "datasets/output/torus", "datasets/output/cube"]
+unlabeled_train_datasets     = ["datasets/output/suzanne_train", "datasets/output/teapot_train", "datasets/output/bunny_train"]
+unlabeled_validate_datasets  = ["datasets/output/suzanne_val", "datasets/output/teapot_val", "datasets/output/bunny_val"]
 schedule = [["normals", 0, 30]] # means update norms decoder from epoch 0 to 30, could add more items to the list to update more decoders
 
+# Overwrites general composer config for transfer type == "shape"
+[train.composer.category]
+epochs = 10
+load_latest_checkpoint = false # set to false to start from scratch
+checkpoints_folder = "checkpoints/composer_category"
+log_folder         = "logs/train_composer_category"
+
+labeled_train_datasets     = ["datasets/output/airplane_train"]
+unlabeled_train_datasets     = ["datasets/output/car_train"]
+unlabeled_validate_datasets  = ["datasets/output/car_val"]
+schedule = [["reflectance", 0, 50], ["normals", 0, 50], ["lights", 0, 50]]
+
 [test.composer]
-test_datasets = ["datasets/output/suzanne_test", "datasets/output/teapot_test", "datasets/output/bunny_test"]
 light_array = "datasets/arrays/shader.npy"
-output_folder = "output/composer"
+types_to_test = ["category"]
+
+[test.composer.shape]
+checkpoints_folder = "checkpoints/composer_shape"
+test_datasets = ["datasets/output/suzanne_test", "datasets/output/teapot_test", "datasets/output/bunny_test"]
+output_folder = "output/composer_shape"
 use_shader_variant = true
 max_num_images_per_dataset = 10
 
-# learned_composer_checkpoint = "checkpoints/composer/2025-10-18_21-42/model_0.pth"
+# use this if you want to test a specific checkpoint
+# learned_composer_checkpoint = "checkpoints/composer_shape/2025-10-19_16-37/model_29.pth"
+
+[test.composer.category]
+checkpoints_folder = "checkpoints/composer_category"
+test_datasets = ["datasets/output/car_test"]
+output_folder = "output/composer_category"
+use_shader_variant = true
+max_num_images_per_dataset = 10
+
+learned_composer_checkpoint = "checkpoints/composer_category/2025-10-19_21-34/model_0.pth"

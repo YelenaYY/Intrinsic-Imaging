@@ -7,6 +7,8 @@ parser.add_argument("--config", type=str, default="config.toml")
 parser.add_argument("--test", action="store_true")
 args = parser.parse_args()
 
+def print_equal_signs(n=32):
+    print("=" * n)
 
 def decompose_trainer(config):
     from train import DecomposerTrainer
@@ -20,13 +22,24 @@ def decompose_tester(config):
 
 def composer_trainer(config):
     from train import ComposerTrainer
-    trainer = ComposerTrainer(config)
-    trainer.train()
+
+    types_to_train = config["train"]["composer"]["types_to_train"]
+    print(f"Training {types_to_train} types")
+    for transfer_type in types_to_train:
+        print_equal_signs()
+        print(f"Now training {transfer_type} type...")
+        trainer = ComposerTrainer(config, transfer_type)
+        trainer.train()
 
 def composer_tester(config):
     from inference import ComposerTester
-    tester = ComposerTester(config)
-    tester.test()
+    types_to_test = config["test"]["composer"]["types_to_test"]
+    print(f"Testing {types_to_test} types")
+    for transfer_type in types_to_test:
+        print_equal_signs()
+        print(f"Now testing {transfer_type} type...")
+        tester = ComposerTester(config, transfer_type)
+        tester.test()
 
 def shader_trainer(config):
     from train import ShaderTrainer

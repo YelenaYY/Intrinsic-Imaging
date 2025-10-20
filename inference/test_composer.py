@@ -1,4 +1,5 @@
 from pathlib import Path
+from copy import deepcopy
 
 import torch
 from torch.utils.data import DataLoader
@@ -8,23 +9,37 @@ import matplotlib.pyplot as plt
 from models import Decomposer, NeuralShader, NeuralShaderVariant, Composer
 from datasets import IntrinsicDataset
 from utils.checkpoint import find_lastest_checkpoint
+from utils.image import float_to_uint8
 
 
 class ComposerTester:
-    def __init__(self, config):
-        self.checkpoints_folder = config["train"]["composer"]["checkpoints_folder"]
+    def __init__(self, config, transfer_type):
         self.device = config["train"]["device"]
-        self.output_folder = config["test"]["composer"]["output_folder"]
+        print(f"Using device: {self.device}")
+        self.transfer_type = transfer_type
+
+        composer_config = deepcopy(config["test"]["composer"])
+        if transfer_type == "shape":
+            print("Using shape specific config")
+            composer_config.update(config["test"]["composer"]["shape"])
+        elif transfer_type == "category":
+            print("Using category specific config")
+            composer_config.update(config["test"]["composer"]["category"])
+        else:
+            raise ValueError(f"Invalid transfer type: {transfer_type}")
+
+        self.checkpoints_folder = composer_config["checkpoints_folder"]
+        self.output_folder = composer_config["output_folder"]
         Path(self.output_folder).mkdir(parents=True, exist_ok=True)
 
         # remove files in output folder
         for file in Path(self.output_folder).glob("*.png"):
             file.unlink()
 
-        self.test_datasets = config["test"]["composer"]["test_datasets"]
-        self.light_array = config["train"]["composer"]["light_array"]
-        self.use_shader_variant = config["train"]["composer"]["use_shader_variant"]
-        self.max_num_images_per_dataset = config["test"]["composer"]["max_num_images_per_dataset"]
+        self.test_datasets = composer_config["test_datasets"]
+        self.light_array = composer_config["light_array"]
+        self.use_shader_variant = composer_config["use_shader_variant"]
+        self.max_num_images_per_dataset = composer_config["max_num_images_per_dataset"]
 
         self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array, max_num_images_per_dataset=self.max_num_images_per_dataset), batch_size=1, shuffle=False)
 
@@ -35,9 +50,9 @@ class ComposerTester:
         decomposer = Decomposer(lights_dim=4).to(self.device)
         self.model = Composer(shader, decomposer).to(self.device)
 
-        if "learned_composer_checkpoint" in config["test"]["composer"]:
-            print(f"Loading learned composer checkpoint: {config['test']['composer']['learned_composer_checkpoint']}")
-            self.model.load_state_dict(torch.load(config["test"]["composer"]["learned_composer_checkpoint"], map_location=self.device))
+        if "learned_composer_checkpoint" in composer_config:
+            print(f"Loading learned composer checkpoint: {composer_config['learned_composer_checkpoint']}")
+            self.model.load_state_dict(torch.load(composer_config["learned_composer_checkpoint"], map_location=self.device))
         else:
             latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
             print(f"Loading checkpoint: {latest_checkpoint}")
@@ -87,28 +102,28 @@ class ComposerTester:
     
     def save_images(self, i, predicted_reconstructed, predicted_reflectance, predicted_depth, predicted_normals, predicted_lights, predicted_shading, target_reconstructed, target_reflectance, target_depth, target_normals, target_lights, target_shading):
         fig, axs = plt.subplots(5, 2, figsize=(10, 10))
-        axs[0,0].imshow(target_reflectance.permute(1, 2, 0).numpy())
+        axs[0,0].imshow(float_to_uint8(target_reflectance).permute(1, 2, 0).numpy())
         axs[0,0].set_title("Target Reflectance")
-        axs[1,0].imshow(target_depth.permute(1, 2, 0).numpy())
+        axs[1,0].imshow(float_to_uint8(target_depth).permute(1, 2, 0).numpy())
         axs[1,0].set_title("Target Depth")
-        axs[2,0].imshow(target_normals.permute(1, 2, 0).numpy())
+        axs[2,0].imshow(float_to_uint8(target_normals).permute(1, 2, 0).numpy())
         axs[2,0].set_title("Target Normals")
 
-        axs[0,1].imshow(predicted_reflectance.permute(1, 2, 0).numpy())
+        axs[0,1].imshow(float_to_uint8(predicted_reflectance).permute(1, 2, 0).numpy())
         axs[0,1].set_title("Predicted Reflectance")
-        axs[1,1].imshow(predicted_depth.permute(1, 2, 0).numpy())
+        axs[1,1].imshow(float_to_uint8(predicted_depth).permute(1, 2, 0).numpy())
         axs[1,1].set_title("Predicted Depth")
-        axs[2,1].imshow(predicted_normals.permute(1, 2, 0).numpy())
+        axs[2,1].imshow(float_to_uint8(predicted_normals).permute(1, 2, 0).numpy())
         axs[2,1].set_title("Predicted Normals")
 
-        axs[3,0].imshow(target_reconstructed.permute(1, 2, 0).numpy())
+        axs[3,0].imshow(float_to_uint8(target_reconstructed).permute(1, 2, 0).numpy())
         axs[3,0].set_title("Target Reconstructed")
-        axs[3,1].imshow(predicted_reconstructed.permute(1, 2, 0).numpy())
+        axs[3,1].imshow(float_to_uint8(predicted_reconstructed).permute(1, 2, 0).numpy())
         axs[3,1].set_title("Predicted Reconstructed")
 
-        axs[4,0].imshow(target_shading.permute(1, 2, 0).numpy())
+        axs[4,0].imshow(float_to_uint8(target_shading).permute(1, 2, 0).numpy())
         axs[4,0].set_title("Target Shading")
-        axs[4,1].imshow(predicted_shading.permute(1, 2, 0).numpy())
+        axs[4,1].imshow(float_to_uint8(predicted_shading).permute(1, 2, 0).numpy())
         axs[4,1].set_title("Predicted Shading")
 
         fig.suptitle(f"Image {i}, target lights: {target_lights}, predicted lights: {predicted_lights}")

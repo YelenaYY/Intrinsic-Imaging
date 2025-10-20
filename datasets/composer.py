@@ -14,8 +14,6 @@ class ComposerDataset(Dataset):
 
         self.labeled_dataset = IntrinsicDataset(labeled_dataset_paths, light_path, max_num_images_per_dataset, cache)
         self.unlabeled_dataset = IntrinsicDataset(unlabeled_dataset_paths, light_path, max_num_images_per_dataset, cache)
-        print("len(labeled_dataset)", len(self.labeled_dataset))
-        print("len(unlabeled_dataset)", len(self.unlabeled_dataset))
 
     def __len__(self):
         return len(self.unlabeled_dataset)

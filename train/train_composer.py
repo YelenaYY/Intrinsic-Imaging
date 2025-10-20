@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 import csv
+from copy import deepcopy
 
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -27,6 +28,7 @@ def masked_l1(pred, target, mask_bool):
     num = m.sum().clamp_min(1)
     return (pred[m] - target[m]).abs().sum() / num
 
+# Set what parameters to update based on the learning schedule (e.g. update normals decoder from epoch 0 to 30)
 def extract_learning_schedule(schedule, epoch, lr, decomposer, shader):
     parameters = []
     for item in schedule:
@@ -39,7 +41,7 @@ def extract_learning_schedule(schedule, epoch, lr, decomposer, shader):
         if image_type == 'normals':
             parameters.append( {'params': decomposer.decoder_normals.parameters(), 'lr': lr} )
         if image_type == 'lights':
-            parameters.append( {'params': decomposer.decoder_lights.parameters(), 'lr': lr} )
+            parameters.append( {'params': decomposer.lights_encoder.parameters(), 'lr': lr} )
         if image_type == 'shader':
             parameters.append( {'params': shader.parameters(), 'lr': lr} )
 
@@ -47,18 +49,28 @@ def extract_learning_schedule(schedule, epoch, lr, decomposer, shader):
 
 
 class ComposerTrainer:
-    def __init__(self, config):
+    def __init__(self, config, transfer_type):
         self.device = config["train"]["device"]
         print(f"Using device: {self.device}")
 
-        # config
-        composer_config = config["train"]["composer"]
+        composer_config = deepcopy(config["train"]["composer"])
+        if transfer_type == "shape":
+            print("Using shape specific config")
+            composer_config.update(config["train"]["composer"]["shape"])
+        elif transfer_type == "category":
+            composer_config.update(config["train"]["composer"]["category"])
+        else:
+            raise ValueError(f"Invalid transfer type: {transfer_type}")
 
+        # config
         epochs = composer_config["epochs"]
+        print(f"Using {epochs} epochs")
+
         learning_rate = composer_config["learning_rate"]
-        log_folder = composer_config["log_folder"]
+        print(f"Using {learning_rate} learning rate")
 
         checkpoints_folder = composer_config["checkpoints_folder"]
+        log_folder = composer_config["log_folder"]
 
         labeled_train_datasets = composer_config["labeled_train_datasets"]
         unlabeled_train_datasets = composer_config["unlabeled_train_datasets"]
@@ -118,6 +130,10 @@ class ComposerTrainer:
         self.unlabel_loss_coef = composer_config.get("unlabel_loss_coef", 1.0)
         self.labeled_loss_coef = composer_config.get("labeled_loss_coef", 1.0)
         self.light_loss_coef = composer_config.get("light_loss_coef", 1.0)
+
+        print(f"Using unlabel loss coef: {self.unlabel_loss_coef}")
+        print(f"Using labeled loss coef: {self.labeled_loss_coef}")
+        print(f"Using light loss coef: {self.light_loss_coef}")
 
         # misc
         self.epochs = epochs
@@ -181,8 +197,7 @@ class ComposerTrainer:
 
         # labeled loss
         reflectance_loss = self.criterion(labeled_prediction["reflectance"], labeled_reflectance)
-        shading_loss = self.criterion(labeled_prediction["shading"], labeled_shading.repeat(1, 3, 1, 1))
-        # depth_loss = self.criterion(labeled_prediction["depth"], labeled_depth)
+        shading_loss = self.criterion(labeled_prediction["shading"], labeled_shading)
         normals_loss = self.criterion(labeled_prediction["normals"], labeled_normals)
         lights_loss = self.criterion(labeled_prediction["lights"], labeled_lights)
 
@@ -210,12 +225,12 @@ class ComposerTrainer:
         normals_loss = self.criterion(predicted_normals, normals)
         lights_loss = self.criterion(predicted_lights, lights)
 
-        val_loss = reflectance_loss + depth_loss + normals_loss + lights_loss
-        return val_loss
+        val_loss = reflectance_loss + depth_loss + normals_loss + lights_loss * self.light_loss_coef
+        return val_loss, reflectance_loss, depth_loss, normals_loss, lights_loss
 
 
     def train(self):
-        header = ['epoch', 'train_loss', 'train_recon', 'train_tv', 'val_loss', 'val_recon', 'val_tv']
+        header = ['epoch', 'train_loss', 'val_loss', 'reflectance_loss', 'depth_loss', 'normals_loss', 'lights_loss']
         time = datetime.now().strftime('%Y-%m-%d_%H-%M')
         filename = os.path.join(self.log_folder, f"train_composer_{time}.csv")
 
@@ -225,10 +240,10 @@ class ComposerTrainer:
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(header)
-            for epoch in range(self.epochs):
+            for epoch in range(self.checkpoint_number, self.epochs):
                 # ---- train
                 parameters = extract_learning_schedule(self.schedule, epoch, self.learning_rate, self.model.decomposer, self.model.shader)
-                print(f"Using {(len(parameters))} parameters for learning schedule")
+                print(f"Updating {(len(parameters))} decoders based on learning schedule")
 
                 pbar = tqdm.tqdm(total=len(self.composer_train_loader), desc=f"[Composer] Train {epoch}")
                 optimizer = Adam(parameters)
@@ -258,16 +273,23 @@ class ComposerTrainer:
                 # ---- val
                 pbar = tqdm.tqdm(total=len(self.composer_validate_loader), desc=f"[Composer] Val   {epoch}")
                 self.model.decomposer.eval()
-                # total_vl = total_vr = total_vt = 0.0
                 total_validation_loss = 0.0
+                total_reflectance_loss = 0.0
+                total_depth_loss = 0.0
+                total_normals_loss = 0.0
+                total_lights_loss = 0.0
                 with torch.no_grad():
                     for batch in self.composer_validate_loader:
                         # loss, recon, tv = self.compute_loss(batch)
                         # total_vl += loss.item()
                         # total_vr += recon.item()
                         # total_vt += tv.item()
-                        loss = self.compute_val_loss(batch)
+                        loss, reflectance_loss, depth_loss, normals_loss, lights_loss = self.compute_val_loss(batch)
                         total_validation_loss += loss.item()
+                        total_reflectance_loss += reflectance_loss.item()
+                        total_depth_loss += depth_loss.item()
+                        total_normals_loss += normals_loss.item()
+                        total_lights_loss += lights_loss.item()
                         pbar.update(1)
                 pbar.close()
 
@@ -276,11 +298,9 @@ class ComposerTrainer:
                     epoch,
                     total_training_loss/len(self.composer_train_loader),
                     total_validation_loss/len(self.composer_validate_loader),
+                    total_reflectance_loss/len(self.composer_validate_loader),
+                    total_depth_loss/len(self.composer_validate_loader),
+                    total_normals_loss/len(self.composer_validate_loader),
+                    total_lights_loss/len(self.composer_validate_loader),
                 ])
                 f.flush()
-
-if __name__ == "__main__":
-    import tomli
-    with open("config.toml", "rb") as cf:
-        config = tomli.load(cf)
-    ComposerTrainer(config).train()
