@@ -22,15 +22,22 @@ class ShaderTester:
         self.test_datasets = config["test"]["shader"]["test_datasets"]
         self.light_array = config["train"]["shader"]["light_array"]
         self.use_variant = config["train"]["shader"]["use_variant"]
+        lights_dim = config["train"]["shader"].get("lights_dim", 4)
+        num_lights = config["train"]["shader"].get("num_lights", 1)
 
         self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array, max_num_images_per_dataset=10), batch_size=1, shuffle=False)
 
         if self.use_variant:
-            print("Using variant shader")
-            self.model = NeuralShaderVariant(lights_dim=4).to(self.device)
-        else:
+            if num_lights != 1:
+                print("shader_variant only supports a single light. Falling back to standard shader for multiple lights.")
+                self.use_variant = False
+            else:
+                print("Using variant shader")
+                self.model = NeuralShaderVariant(lights_dim=lights_dim).to(self.device)
+
+        if not self.use_variant:
             print("Using standard shader")
-            self.model = NeuralShader(lights_dim=4).to(self.device)
+            self.model = NeuralShader(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
 
         latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
         print(f"Loading checkpoint: {latest_checkpoint}")

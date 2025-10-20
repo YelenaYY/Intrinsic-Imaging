@@ -24,15 +24,21 @@ class ComposerTester:
         self.test_datasets = config["test"]["composer"]["test_datasets"]
         self.light_array = config["train"]["composer"]["light_array"]
         self.use_shader_variant = config["train"]["composer"]["use_shader_variant"]
+        lights_dim = config["train"]["composer"].get("lights_dim", 4)
+        num_lights = config["train"]["composer"].get("num_lights", 1)
         self.max_num_images_per_dataset = config["test"]["composer"]["max_num_images_per_dataset"]
 
         self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array, max_num_images_per_dataset=self.max_num_images_per_dataset), batch_size=1, shuffle=False)
 
+        if self.use_shader_variant and num_lights != 1:
+            print("shader_variant only supports a single light. Falling back to standard shader for multiple lights.")
+            self.use_shader_variant = False
+
         if self.use_shader_variant:
             shader = NeuralShaderVariant(lights_dim=4).to(self.device)
         else:
-            shader = NeuralShader(lights_dim=4).to(self.device)
-        decomposer = Decomposer(lights_dim=4).to(self.device)
+            shader = NeuralShader(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
+        decomposer = Decomposer(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
         self.model = Composer(shader, decomposer).to(self.device)
 
         if "learned_composer_checkpoint" in config["test"]["composer"]:
@@ -115,4 +121,5 @@ class ComposerTester:
         fig.tight_layout()
 
         fig.savefig(f"{self.output_folder}/test_{i}.png")
+        plt.close(fig)
 
