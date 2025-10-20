@@ -54,7 +54,7 @@ class ShaderTrainer:
         # model
         if not use_variant:
             print("Using standard shader")
-            self.model = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
+            self.model = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim, num_lights=num_lights).to(self.device)
         else:
             print("Using variant shader")
             self.model = NeuralShaderVariant(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)

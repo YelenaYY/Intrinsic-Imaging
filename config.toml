@@ -31,7 +31,7 @@ load_latest_checkpoint = false # set to false to start from scratch
 
 train_datasets     = ["datasets/output/car_train"]
 validate_datasets  = ["datasets/output/car_val"]
-light_array        = "datasets/arrays/shader.npy"
+light_array        = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 
 learning_rate      = 1e-4
 checkpoints_folder = "checkpoints/shader"
@@ -42,11 +42,11 @@ lights_dim         = 4
 num_lights         = 2
 expand_dim         = 8
 
-use_variant = true # user variant shader
+use_variant = false # user variant shader
 
 [test.shader]
 test_datasets = ["datasets/output/car_test", "datasets/output/car_train"]
-light_array = "datasets/arrays/shader.npy"
+light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 output_folder = "output/shader"
 
 [train.composer]
@@ -60,7 +60,7 @@ labeled_train_datasets     = ["datasets/output/cone", "datasets/output/cylinder"
 unlabeled_train_datasets     = ["datasets/output/suzanne_train", "datasets/output/teapot_train", "datasets/output/bunny_train"]
 unlabeled_validate_datasets  = ["datasets/output/suzanne_val", "datasets/output/teapot_val", "datasets/output/bunny_val"]
 
-light_array        = "datasets/arrays/shader.npy"
+light_array        = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 
 learning_rate      = 1e-2
 checkpoints_folder = "checkpoints/composer"
@@ -78,7 +78,7 @@ schedule = [["normals", 0, 30]] # means update norms decoder from epoch 0 to 30,
 
 [test.composer]
 test_datasets = ["datasets/output/suzanne_test", "datasets/output/teapot_test", "datasets/output/bunny_test"]
-light_array = "datasets/arrays/shader.npy"
+light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 output_folder = "output/composer"
 use_shader_variant = true
 max_num_images_per_dataset = 10
