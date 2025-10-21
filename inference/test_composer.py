@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 import matplotlib.pyplot as plt
 
-from models import Decomposer, NeuralShader, NeuralShaderVariant, Composer
+from models import Decomposer, NeuralShader, NeuralShaderVariant, Composer, composer
 from datasets import IntrinsicDataset
 from utils.checkpoint import find_lastest_checkpoint
 from utils.image import float_to_uint8
@@ -41,13 +41,20 @@ class ComposerTester:
         self.use_shader_variant = composer_config["use_shader_variant"]
         self.max_num_images_per_dataset = composer_config["max_num_images_per_dataset"]
 
+        lights_dim = composer_config.get("lights_dim", 4)
+        num_lights = composer_config.get("num_lights", 1)
+
         self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array, max_num_images_per_dataset=self.max_num_images_per_dataset), batch_size=1, shuffle=False)
+
+        if self.use_shader_variant and num_lights != 1:
+            print("shader_variant only supports a single light. Falling back to standard shader for multiple lights.")
+            self.use_shader_variant = False
 
         if self.use_shader_variant:
             shader = NeuralShaderVariant(lights_dim=4).to(self.device)
         else:
-            shader = NeuralShader(lights_dim=4).to(self.device)
-        decomposer = Decomposer(lights_dim=4).to(self.device)
+            shader = NeuralShader(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
+        decomposer = Decomposer(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
         self.model = Composer(shader, decomposer).to(self.device)
 
         if "learned_composer_checkpoint" in composer_config:
@@ -130,4 +137,5 @@ class ComposerTester:
         fig.tight_layout()
 
         fig.savefig(f"{self.output_folder}/test_{i}.png")
+        plt.close(fig)
 

@@ -81,4 +81,5 @@ class DecomposerTester:
         fig.tight_layout()
 
         fig.savefig(f"{self.output_folder}/test_{i}.png")
+        plt.close(fig)
 

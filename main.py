@@ -6,6 +6,7 @@ parser.add_argument("--model", type=str, default="decomposer")
 parser.add_argument("--config", type=str, default="config.toml")
 parser.add_argument("--test", action="store_true")
 parser.add_argument("--validate", type=str, default=None)
+parser.add_argument("--num_lights", type=int, default=None, help="Override number of lights (applies to decomposer/shader/composer)")
 args = parser.parse_args()
 
 def print_equal_signs(n=32):
@@ -67,6 +68,17 @@ if __name__ == "__main__":
             if not torch.cuda.is_available():
                 print("CUDA is not available")
                 exit(1)
+
+        # Optional CLI override for number of lights
+        if args.num_lights is not None:
+            # Initialize nested sections if missing
+            config.setdefault("train", {})
+            config["train"].setdefault("decomposer", {})
+            config["train"].setdefault("shader", {})
+            config["train"].setdefault("composer", {})
+            config["train"]["decomposer"]["num_lights"] = args.num_lights
+            config["train"]["shader"]["num_lights"] = args.num_lights
+            config["train"]["composer"]["num_lights"] = args.num_lights
 
         if args.model == "decomposer":
             if args.test:

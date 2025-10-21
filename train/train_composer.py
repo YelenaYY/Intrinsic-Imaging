@@ -83,6 +83,7 @@ class ComposerTrainer:
         batch_size = composer_config.get("batch_size", 4)
         lights_dim = composer_config.get("lights_dim", 4)
         expand_dim = composer_config.get("expand_dim", 8)
+        num_lights = composer_config.get("num_lights", 1)
 
         use_shader_variant = composer_config["use_shader_variant"]
         learned_shader_checkpoint = composer_config["learned_shader_checkpoint"]
@@ -91,12 +92,16 @@ class ComposerTrainer:
         if not Path(learned_shader_checkpoint).exists() or not Path(learned_decomposer_checkpoint).exists():
             raise ValueError("Learned shader or decomposer checkpoint not found")
         
+        if use_shader_variant and num_lights != 1:
+            print("shader_variant only supports a single light. Falling back to standard shader for multiple lights.")
+            use_shader_variant = False
+
         if use_shader_variant:
             shader = NeuralShaderVariant(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
         else:
-            shader = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim).to(self.device)
+            shader = NeuralShader(lights_dim=lights_dim, expand_dim=expand_dim, num_lights=num_lights).to(self.device)
 
-        decomposer = Decomposer(lights_dim=lights_dim).to(self.device)
+        decomposer = Decomposer(lights_dim=lights_dim, num_lights=num_lights).to(self.device)
 
         self.model = Composer(shader, decomposer).to(self.device)
 
