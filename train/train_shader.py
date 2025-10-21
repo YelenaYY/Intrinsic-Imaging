@@ -24,6 +24,7 @@ from utils import find_lastest_checkpoint #,normalize_normals, masked_l1, comput
 class ShaderTrainer:
     def __init__(self, config):
         self.device = config["train"]["device"]
+        num_workers = config["train"]["num_workers"]
         print(f"Using device: {self.device}")
 
         # read config
@@ -48,8 +49,8 @@ class ShaderTrainer:
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Val   dataset size: {len(validate_dataset)}")
 
-        self.train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=2, shuffle=True, pin_memory=True)
-        self.validate_loader = DataLoader(validate_dataset, batch_size=batch_size, num_workers=2, shuffle=False, pin_memory=True)
+        self.train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True, pin_memory=True)
+        self.validate_loader = DataLoader(validate_dataset, batch_size=batch_size, num_workers=num_workers, shuffle=False, pin_memory=True)
 
         # model
         if not use_variant:
@@ -78,42 +79,19 @@ class ShaderTrainer:
                 self.model.load_state_dict(torch.load(latest, map_location=self.device))
                 self.checkpoint_number = ckpt_num + 1
 
-    # @torch.no_grad()
-    # def _make_fg(self, mask3):
-    #     # mask3: (B,3,H,W), foreground if any channel >= 0.25
-    #     return (mask3 >= 0.25).any(dim=1, keepdim=True)
-
-    # def _safe_divide(self, num, den, eps=1e-3):
-    #     return num / (den.abs().clamp_min(eps))
-
-    # def _compute_shading_gt(self, image, reflectance, mask3):
-    #     # image: (B,3,H,W), reflectance: (B,3,H,W)
-    #     # grayscale shading target from I/R; average across RGB
-    #     fg = self._make_fg(mask3)
-    #     S_rgb = self._safe_divide(image, reflectance.clamp_min(1e-3))
-    #     S_gray = S_rgb.mean(dim=1, keepdim=True)
-    #     # optional clamp to [0,1]
-    #     return S_gray.clamp(0, 1), fg
 
     def compute_loss(self, batch):
         # batch tuple order from your DecomposerTrainer: 
         # mask, reconstructed(I), reflectance, shading, normals, depth, _, _, lights
         _, _, _, S, N, _, _, _, L = batch
-        # I = I.to(self.device)
         S = S.to(self.device)
         N = N.to(self.device)
         L = L.to(self.device)
-        # mask = mask.to(self.device)
-
-        # targets
-        # S_gt, fg = compute_shading_gt(I, R, mask)
-        # N = normalize_normals(N)
 
         # predict
         S_hat = self.model(N, L)
 
         # loss
-        # return masked_l1(S_hat, S_gt, fg)
         return nn.MSELoss()(S_hat, S)
 
     def train(self):

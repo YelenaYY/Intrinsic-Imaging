@@ -5,6 +5,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", type=str, default="decomposer")
 parser.add_argument("--config", type=str, default="config.toml")
 parser.add_argument("--test", action="store_true")
+parser.add_argument("--validate", type=str, default=None)
 args = parser.parse_args()
 
 def print_equal_signs(n=32):
@@ -19,6 +20,11 @@ def decompose_tester(config):
     from inference import DecomposerTester
     tester = DecomposerTester(config)
     tester.test()
+
+def decompose_validator(config, date_string):
+    from inference import DecomposerValidator
+    validator = DecomposerValidator(config, date_string)
+    validator.validate()
 
 def composer_trainer(config):
     from train import ComposerTrainer
@@ -66,6 +72,9 @@ if __name__ == "__main__":
             if args.test:
                 print("Testing...")
                 decompose_tester(config)
+            elif args.validate is not None:
+                print("Validating...")
+                decompose_validator(config, args.validate)
             else:
                 print("Training...")
                 decompose_trainer(config)

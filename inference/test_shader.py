@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import tqdm
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -21,9 +21,10 @@ class ShaderTester:
 
         self.test_datasets = config["test"]["shader"]["test_datasets"]
         self.light_array = config["train"]["shader"]["light_array"]
-        self.use_variant = config["train"]["shader"]["use_variant"]
+        self.use_variant = config["train"]["shader"].get("use_variant", False)
+        self.learned_shader_checkpoint = config["test"]["shader"].get("learned_shader_checkpoint", None)
 
-        self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array, max_num_images_per_dataset=10), batch_size=1, shuffle=False)
+        self.test_dataloader = DataLoader(IntrinsicDataset(self.test_datasets, self.light_array, max_num_images_per_dataset=50), batch_size=1, shuffle=False)
 
         if self.use_variant:
             print("Using variant shader")
@@ -32,16 +33,20 @@ class ShaderTester:
             print("Using standard shader")
             self.model = NeuralShader(lights_dim=4).to(self.device)
 
-        latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
-        print(f"Loading checkpoint: {latest_checkpoint}")
-        print(f"Checkpoint number: {checkpoint_number}")
-        self.model.load_state_dict(torch.load(latest_checkpoint))
+        if self.learned_shader_checkpoint is not None:
+            print(f"Loading learned shader checkpoint: {self.learned_shader_checkpoint}")
+            self.model.load_state_dict(torch.load(self.learned_shader_checkpoint))
+        else:   
+            latest_checkpoint, checkpoint_number = find_lastest_checkpoint(self.checkpoints_folder)
+            print(f"Loading checkpoint: {latest_checkpoint}")
+            print(f"Checkpoint number: {checkpoint_number}")
+            self.model.load_state_dict(torch.load(latest_checkpoint))
 
 
     def test(self):
         self.model.eval()
         with torch.no_grad():
-            for i, batch in enumerate(self.test_dataloader):
+            for i, batch in tqdm.tqdm(enumerate(self.test_dataloader), total=len(self.test_dataloader)):
                 _, _, _, S, N, _, _, _, L = batch
 
                 # mask = mask.to(self.device)
@@ -74,9 +79,9 @@ class ShaderTester:
     
     def save_images(self, i, target_shading, predicted_shading, loss):
         fig, axs = plt.subplots(1, 2, figsize=(10, 10))
-        axs[0].imshow(target_shading.permute(1, 2, 0).numpy())
+        axs[0].imshow(target_shading.permute(1, 2, 0).numpy(), cmap="gray")
         axs[0].set_title("Target Shading")
-        axs[1].imshow(predicted_shading.permute(1, 2, 0).numpy())
+        axs[1].imshow(predicted_shading.permute(1, 2, 0).numpy(), cmap="gray")
         axs[1].set_title("Predicted Shading")
         fig.suptitle(f"Image {i}, loss: {loss.item()}")
         fig.tight_layout()

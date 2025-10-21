@@ -8,8 +8,7 @@ load_latest_checkpoint = false # set to false to start from scratch
 
 train_datasets = ["datasets/output/motorbike_train"]
 validate_datasets = ["datasets/output/motorbike_val"]
-test_datasets = ["datasets/output/motorbike_test"]
-light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
+light_array = "datasets/arrays/shader.npy" 
 
 learning_rate = 0.01
 light_loss_coef = 0.01
@@ -18,11 +17,12 @@ checkpoints_folder = "checkpoints/decomposer"
 log_folder = "logs/train_decomposer"
 epochs = 100
 lights_dim = 4
-num_lights = 2
+num_lights = 1
 
 [test.decomposer]
 test_datasets = ["datasets/output/motorbike_test"]
-light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
+light_array = "datasets/arrays/shader.npy" 
+# light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 output_folder = "output/decomposer"
 
 # Shader
@@ -34,18 +34,23 @@ validate_datasets  = ["datasets/output/car_val"]
 light_array        = "datasets/arrays/shader.npy"
 
 learning_rate      = 1e-4
-checkpoints_folder = "checkpoints/shader"
-log_folder         = "logs/train_shader"
-epochs             = 50
-batch_size         = 8
+epochs             = 300
+batch_size         = 32
 lights_dim         = 4
-num_lights         = 2
+num_lights         = 1
 expand_dim         = 8
 
-use_variant = true # user variant shader
+log_folder         = "logs/train_shader"
+checkpoints_folder = "checkpoints/shader"
+
+# log_folder         = "logs/train_shader_variant"
+# checkpoints_folder = "checkpoints/shader_variant"
+# use_variant = true # user variant shader
 
 [test.shader]
-test_datasets = ["datasets/output/car_test", "datasets/output/car_train"]
+# learned_shader_checkpoint = "checkpoints/shader/2025-10-20_13-28/model_10.pth"
+
+test_datasets = ["datasets/output/car_test"]
 light_array = "datasets/arrays/shader.npy"
 output_folder = "output/shader"
 
@@ -65,7 +70,7 @@ learning_rate      = 1e-2
 epochs             = 30
 batch_size         = 32
 lights_dim         = 4
-num_lights         = 2
+num_lights         = 1
 expand_dim         = 8
 
 light_loss_coef = 1
@@ -86,7 +91,7 @@ schedule = [["normals", 0, 30]] # means update norms decoder from epoch 0 to 30,
 
 # Overwrites general composer config for transfer type == "shape"
 [train.composer.category]
-epochs = 10
+epochs = 100
 load_latest_checkpoint = false # set to false to start from scratch
 checkpoints_folder = "checkpoints/composer_category"
 log_folder         = "logs/train_composer_category"
@@ -94,7 +99,7 @@ log_folder         = "logs/train_composer_category"
 labeled_train_datasets     = ["datasets/output/airplane_train"]
 unlabeled_train_datasets     = ["datasets/output/car_train"]
 unlabeled_validate_datasets  = ["datasets/output/car_val"]
-schedule = [["reflectance", 0, 50], ["normals", 0, 50], ["lights", 0, 50]]
+schedule = [["reflectance", 0, 100], ["normals", 0, 100], ["lights", 0, 100]]
 
 [test.composer]
 light_array = "datasets/arrays/shader.npy"

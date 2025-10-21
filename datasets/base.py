@@ -142,7 +142,7 @@ if __name__ == "__main__":
     assert torch.any(reconstructed != reflectance )
 
     import matplotlib.pyplot as plt
-    fig, axs = plt.subplots(2, 2)
+    fig, axs = plt.subplots(3, 3)
     axs[0,0].imshow(reconstructed.permute(1, 2, 0).numpy())
     axs[0,0].set_title("Reconstructed")
     axs[0,1].imshow(composite.permute(1, 2, 0).numpy())
@@ -151,6 +151,10 @@ if __name__ == "__main__":
     axs[1,0].set_title("Reflectance")
     axs[1,1].imshow(shading.repeat(3, 1, 1).permute(1, 2, 0).numpy())
     axs[1,1].set_title("Shading")
+    axs[2,0].imshow(normals.permute(1, 2, 0).numpy())
+    axs[2,0].set_title("Normals")
+    axs[2,1].imshow(depth.permute(1, 2, 0).numpy())
+    axs[2,1].set_title("Depth")
     plt.show()
 
     dataset = IntrinsicDataset(dataset_paths=["datasets/output/cube", "datasets/output/cone", "datasets/output/cylinder", "datasets/output/sphere", "datasets/output/torus"], light_path="datasets/arrays/shader.npy")
