@@ -21,8 +21,8 @@ num_lights = 1
 
 [test.decomposer]
 test_datasets = ["datasets/output/motorbike_test"]
-light_array = "datasets/arrays/shader.npy"
-output_folder = "output/decomposer"
+light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
+output_folder = "output/decomposer/multiplelights"
 
 # Shader
 [train.shader]
@@ -30,13 +30,13 @@ load_latest_checkpoint = false # set to false to start from scratch
 
 train_datasets     = ["datasets/output/car_train"]
 validate_datasets  = ["datasets/output/car_val"]
-light_array        = "datasets/arrays/shader.npy"
+light_array        = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 
 learning_rate      = 1e-4
 epochs             = 300
 batch_size         = 32
 lights_dim         = 4
-num_lights         = 1
+num_lights         = 2
 expand_dim         = 8
 
 log_folder         = "logs/train_shader"
@@ -48,8 +48,9 @@ checkpoints_folder = "checkpoints/shader"
 use_variant = false # user variant shader
 
 [test.shader]
-light_array = "datasets/arrays/shader.npy"
-output_folder = "output/shader"
+light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
+output_folder = "output/shader/multiple-lights"
+# learned_shader_checkpoint = "checkpoints/shader/2025-10-20_13-28/model_10.pth"
 
 test_datasets = ["datasets/output/car_test"]
 
@@ -59,14 +60,16 @@ test_datasets = ["datasets/output/car_test"]
 # Must be one or two of the following: "shape", "category"
 types_to_train = ["category"] 
 
+learned_decomposer_checkpoint = "checkpoints/decomposer/2025-10-19_14-17_multi-lights/model_99.pth"
+learned_shader_checkpoint = "checkpoints/shader/2025-10-19_19-33_multi-lights/model_49.pth"
 
-learned_decomposer_checkpoint = "checkpoints/decomposer/2025-10-14_21-04/model_99.pth"
-learned_shader_checkpoint = "checkpoints/shader/2025-10-18_09-25/model_29.pth"
+# learned_decomposer_checkpoint = "checkpoints/decomposer/2025-10-14_21-04/model_99.pth"
+# learned_shader_checkpoint = "checkpoints/shader/2025-10-18_09-25/model_29.pth"
 
 use_shader_variant = true
 # use_shader_variant = false
 
-light_array        = "datasets/arrays/shader.npy"
+light_array        = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 
 learning_rate      = 1e-2
 epochs             = 30
