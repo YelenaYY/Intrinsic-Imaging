@@ -2,6 +2,9 @@
 ## Replication and extension of "Self-Supervised Intrinsic Image Decomposition" (NIPS 2017). 
 Supports single- and multi-light setups, Blender-based data synthesis, and TOML-configurable training/testing.
 
+### OS Used: Linux
+### Yes, we will use 4 travel days 
+
 # Environment Setup
 ```bash
 conda env create -f environment.yml
