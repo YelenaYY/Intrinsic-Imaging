@@ -1,16 +1,17 @@
 # Intrinsic-Imaging
-Replication of "Self-Supervised Intrinsic Image Decomposition".
-
+## Replication and extension of "Self-Supervised Intrinsic Image Decomposition" (NIPS 2017). 
+Supports single- and multi-light setups, Blender-based data synthesis, and TOML-configurable training/testing.
 
 # Environment Setup
 ```bash
 conda env create -f environment.yml
+conda activate intrinsic-imaging
 ```
 
-To downoad datasets, run the following
+To downoad datasets, run the following (~2GB per category)
 
 ```bash
-bash download_data.sh motorbike car airplane suzanne teapot bunny
+bash download_data.sh motorbike car airplane suzanne teapot bunny motorbike bottle
 ```
 
 Primitives shapes required for composer can be downloaded at the following site:

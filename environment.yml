@@ -1,4 +1,4 @@
-name: cv
+name: intrinsics-imaging
 channels:
   - conda-forge
 dependencies:
@@ -8,6 +8,7 @@ dependencies:
   - pandas
   - pillow
   - python=3.10
+  - tomli
   - pytorch
   - scikit-image
   - scipy
