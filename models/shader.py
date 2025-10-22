@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Shader neural network model for Intrinsic Imaging
+- Generates shading from surface normals and lighting parameters
+- Uses convolutional blocks with skip connections
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

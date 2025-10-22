@@ -6,8 +6,8 @@ num_workers = 24 # number of workers for data loading
 [train.decomposer]
 load_latest_checkpoint = false # set to false to start from scratch
 
-train_datasets = ["datasets/output/motorbike_train"]
-validate_datasets = ["datasets/output/motorbike_val"]
+train_datasets = ["datasets/output/motorbike_multi_train"]
+validate_datasets = ["datasets/output/motorbike_multi_val"]
 light_array = "datasets/arrays/shader.npy" 
 
 learning_rate = 0.01
@@ -20,7 +20,7 @@ lights_dim = 4
 num_lights = 1
 
 [test.decomposer]
-test_datasets = ["datasets/output/motorbike_test"]
+test_datasets = ["datasets/output/motorbike_multi_test"]
 light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 output_folder = "output/decomposer/multiplelights"
 
@@ -28,8 +28,8 @@ output_folder = "output/decomposer/multiplelights"
 [train.shader]
 load_latest_checkpoint = false # set to false to start from scratch
 
-train_datasets     = ["datasets/output/car_train"]
-validate_datasets  = ["datasets/output/car_val"]
+train_datasets     = ["datasets/output/car_multi_train"]
+validate_datasets  = ["datasets/output/car_multi_val"]
 light_array        = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 
 learning_rate      = 1e-4
@@ -52,7 +52,7 @@ light_array = "datasets/arrays/shader_multilights.npy" #or "shader.npy"
 output_folder = "output/shader/multiple-lights"
 # learned_shader_checkpoint = "checkpoints/shader/2025-10-20_13-28/model_10.pth"
 
-test_datasets = ["datasets/output/car_test"]
+test_datasets = ["datasets/output/car_multi_test"]
 
 # General Composer Config
 [train.composer]
@@ -101,9 +101,9 @@ load_latest_checkpoint = false # set to false to start from scratch
 checkpoints_folder = "checkpoints/composer_category"
 log_folder         = "logs/train_composer_category"
 
-labeled_train_datasets     = ["datasets/output/airplane_train"]
-unlabeled_train_datasets     = ["datasets/output/car_train"]
-unlabeled_validate_datasets  = ["datasets/output/car_val"]
+labeled_train_datasets     = ["datasets/output/airplane_multi_train"]
+unlabeled_train_datasets     = ["datasets/output/car_multi_train"]
+unlabeled_validate_datasets  = ["datasets/output/car_multi_val"]
 schedule = [["reflectance", 0, 100], ["normals", 0, 100], ["lights", 0, 100]]
 
 [test.composer]
@@ -122,7 +122,7 @@ max_num_images_per_dataset = 10
 
 [test.composer.category]
 checkpoints_folder = "checkpoints/composer_category"
-test_datasets = ["datasets/output/car_test"]
+test_datasets = ["datasets/output/car_multi_test"]
 output_folder = "output/composer_category"
 use_shader_variant = true
 max_num_images_per_dataset = 10

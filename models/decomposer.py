@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Decomposer neural network model for Intrinsic Imaging
+- Predicts reflectance, depth, surface normals, and lighting from input images
+- Uses encoder-decoder architecture with skip connections
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

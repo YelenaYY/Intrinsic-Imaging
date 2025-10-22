@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Shader variant neural network model for Intrinsic Imaging
+- Alternative shader implementation with different architecture
+- Generates shading from surface normals and lighting parameters
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

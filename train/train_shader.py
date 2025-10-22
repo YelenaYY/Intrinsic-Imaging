@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Training script for Shader model
+- Handles training loop for shader network
+- Supports multi-light training with comprehensive logging
+"""
+
 # train_shader.py
 import os
 import sys

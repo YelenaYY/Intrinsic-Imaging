@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Training script for Decomposer model
+- Handles training loop, validation, and checkpointing for the decomposer network
+- Supports multi-light training and comprehensive logging
+"""
+
 import os
 import sys
 from pathlib import Path

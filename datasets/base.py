@@ -1,4 +1,12 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Base dataset class for Intrinsic Imaging project
+- Loads and processes intrinsic image datasets (reflectance, shading, normals, depth, etc.)
+- Handles multi-dataset loading with proper indexing and caching
+"""
+
 import torch
+from pathlib import Path
 from torch.utils.data import Dataset
 from torchvision.io import decode_image, ImageReadMode
 from torchvision import transforms
@@ -62,12 +70,16 @@ class IntrinsicDataset(Dataset):
 
             specular = decode_image(img_set['specular'], mode=ImageReadMode.RGB) / 255.0
 
-            light_idx = self.idx_to_light_idx(idx)
-            lights = torch.from_numpy(self.light[light_idx, :]).to(torch.float32)
+            # lights = torch.from_numpy(self.light[light_idx, :]).to(torch.float32)
 
             composite = decode_image(img_set['composite'], mode=ImageReadMode.RGB) / 255.0
+
+            light_idx = int(Path(img_set['mask']).stem.split('_')[0])
+            lights = torch.from_numpy(self.light[light_idx, :]).to(torch.float32)
         except Exception as e:
-            print("Error: ", traceback.format_exc())
+            print(f"Error at index {idx}: ", traceback.format_exc())
+            print(f"Invalid image from the set, consider removing the whole set: {img_set}")
+            print(f"lights idx: {light_idx}")
             raise e
 
         if self.cache:

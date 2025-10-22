@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Main entry point for Intrinsic Imaging project
+- Handles training, testing, and validation for decomposer, composer, and shader models
+- Supports command-line configuration and model selection
+"""
+
 import argparse
 import tomli
 

@@ -1,7 +1,15 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Testing script for Decomposer model
+- Handles model evaluation and testing for the decomposer network
+- Generates test results and saves outputs
+"""
+
 from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
+import torch.nn as nn
 
 import matplotlib.pyplot as plt
 
@@ -32,8 +40,17 @@ class DecomposerTester:
         print(f"Checkpoint number: {checkpoint_number}")
         self.model.load_state_dict(torch.load(latest_checkpoint))
 
+        self.criterion = nn.MSELoss()
+        self.light_loss_coef = config["train"]["decomposer"].get("light_loss_coef", 1)
+        self.save_images = config["test"]["decomposer"].get("save_images", False)
+
 
     def test(self):
+        total_loss = 0
+        total_reflectance_loss = 0
+        total_depth_loss = 0
+        total_normals_loss = 0
+        total_lights_loss = 0
         self.model.eval()
         with torch.no_grad():
             for i, batch in enumerate(self.test_dataloader):
@@ -58,8 +75,22 @@ class DecomposerTester:
                 target_normals = target_normals.cpu().detach().squeeze(0)
                 target_lights = target_lights.cpu().detach().squeeze(0)
 
-                self.save_images(i, predicted_reflectance, predicted_depth, predicted_normals, predicted_lights, target_reflectance, target_depth, target_normals, target_lights)
+                reflectance_loss = self.criterion(predicted_reflectance, target_reflectance)
+                depth_loss = self.criterion(predicted_depth, target_depth)
+                normals_loss = self.criterion(predicted_normals, target_normals)
+                lights_loss = self.criterion(predicted_lights, target_lights)
 
+                loss = reflectance_loss + depth_loss + normals_loss + lights_loss * self.light_loss_coef
+                total_loss += loss.item()
+                total_reflectance_loss += reflectance_loss.item()
+                total_depth_loss += depth_loss.item()
+                total_normals_loss += normals_loss.item()
+                total_lights_loss += lights_loss.item() * self.light_loss_coef
+
+                if self.save_images:
+                    self.save_images(i, predicted_reflectance, predicted_depth, predicted_normals, predicted_lights, target_reflectance, target_depth, target_normals, target_lights)
+        
+        print(f"Total loss: {total_loss / len(self.test_dataloader)}, reflectance_loss: {total_reflectance_loss / len(self.test_dataloader)}, depth_loss: {total_depth_loss / len(self.test_dataloader)}, normals_loss: {total_normals_loss / len(self.test_dataloader)}, lights_loss: {total_lights_loss / len(self.test_dataloader)}")
     
     def save_images(self, i, predicted_reflectance, predicted_depth, predicted_normals, predicted_lights, target_reflectance, target_depth, target_normals, target_lights):
         fig, axs = plt.subplots(3, 2, figsize=(10, 10))

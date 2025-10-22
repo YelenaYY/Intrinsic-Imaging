@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Training script for Composer model
+- Handles training loop for composer network with different transfer types
+- Supports shape and category transfer training with proper logging
+"""
+
 # train_composer.py
 import os
 import sys

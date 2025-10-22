@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Checkpoint utility functions for Intrinsic Imaging
+- Handles checkpoint saving, loading, and management
+- Finds latest checkpoints and manages checkpoint directories
+"""
+
 from pathlib import Path
 from datetime import datetime
 

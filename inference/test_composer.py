@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Testing script for Composer model
+- Handles model evaluation and testing for the composer network
+- Supports different transfer types and generates test results
+"""
+
 from pathlib import Path
 from copy import deepcopy
 

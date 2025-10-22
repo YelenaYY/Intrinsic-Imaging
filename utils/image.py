@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Image processing utility functions for Intrinsic Imaging
+- Handles image normalization, processing, and utility functions
+- Provides common image operations for the project
+"""
+
 import torch
 def normalize_normals(n):
     mag = n.pow(2).sum(1, keepdim=True).sqrt().clamp_min(1e-6)

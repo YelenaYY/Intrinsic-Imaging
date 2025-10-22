@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Composer dataset class for Intrinsic Imaging
+- Handles dataset loading for composer training with different transfer types
+- Supports shape and category transfer datasets
+"""
+
 from torch.utils.data import Dataset
 from .base import IntrinsicDataset
 import random

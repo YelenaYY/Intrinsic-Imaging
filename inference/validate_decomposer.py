@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Validation script for Decomposer model
+- Handles model validation and performance evaluation
+- Generates validation metrics and saves results
+"""
+
 from pathlib import Path
 import os
 import csv

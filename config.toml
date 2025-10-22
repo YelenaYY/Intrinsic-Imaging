@@ -33,7 +33,7 @@ validate_datasets  = ["datasets/output/car_val"]
 light_array        = "datasets/arrays/shader.npy"
 
 learning_rate      = 1e-4
-epochs             = 300
+epochs             = 50
 batch_size         = 32
 lights_dim         = 4
 num_lights         = 1
@@ -41,15 +41,16 @@ expand_dim         = 8
 
 log_folder         = "logs/train_shader"
 checkpoints_folder = "checkpoints/shader"
+use_variant = false # user variant shader
 
 # log_folder         = "logs/train_shader_variant"
 # checkpoints_folder = "checkpoints/shader_variant"
 # use_variant = true # user variant shader
-use_variant = false # user variant shader
 
 [test.shader]
 light_array = "datasets/arrays/shader.npy"
 output_folder = "output/shader"
+# output_folder = "output/shader_variant"
 
 test_datasets = ["datasets/output/car_test"]
 
@@ -61,10 +62,10 @@ types_to_train = ["category"]
 
 
 learned_decomposer_checkpoint = "checkpoints/decomposer/2025-10-14_21-04/model_99.pth"
-learned_shader_checkpoint = "checkpoints/shader/2025-10-18_09-25/model_29.pth"
+learned_shader_checkpoint = "checkpoints/shader/2025-10-21_18-07/model_25.pth"
 
-use_shader_variant = true
-# use_shader_variant = false
+# use_shader_variant = true
+use_shader_variant = false
 
 light_array        = "datasets/arrays/shader.npy"
 
@@ -111,17 +112,17 @@ types_to_test = ["category"]
 checkpoints_folder = "checkpoints/composer_shape"
 test_datasets = ["datasets/output/suzanne_test", "datasets/output/teapot_test", "datasets/output/bunny_test"]
 output_folder = "output/composer_shape"
-use_shader_variant = true
+use_shader_variant = false
 max_num_images_per_dataset = 10
 
 # use this if you want to test a specific checkpoint
-# learned_composer_checkpoint = "checkpoints/composer_shape/2025-10-19_16-37/model_29.pth"
+learned_composer_checkpoint = "checkpoints/composer_shape/2025-10-21_18-52/model_0.pth"
 
 [test.composer.category]
 checkpoints_folder = "checkpoints/composer_category"
 test_datasets = ["datasets/output/car_test"]
 output_folder = "output/composer_category"
-use_shader_variant = true
+use_shader_variant = false
 max_num_images_per_dataset = 10
 
-learned_composer_checkpoint = "checkpoints/composer_category/2025-10-19_21-34/model_0.pth"
+# learned_composer_checkpoint = "checkpoints/composer_category/2025-10-19_21-34/model_0.pth"

@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Testing script for Shader model
+- Handles model evaluation and testing for the shader network
+- Generates shading outputs and saves test results
+"""
+
 from pathlib import Path
 import tqdm
 import torch

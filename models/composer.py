@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Composer neural network model for Intrinsic Imaging
+- Combines shader and decomposer models for end-to-end training
+- Handles different transfer types (shape, category, etc.)
+"""
+
 import torch.nn as nn
 
 

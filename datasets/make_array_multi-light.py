@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Multi-light array generation script
+- Generates light parameter arrays for multi-light training scenarios
+- Creates numpy arrays with specified number of light sources
+"""
+
 import numpy as np
 import argparse
 

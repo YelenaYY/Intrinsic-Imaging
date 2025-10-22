@@ -1,3 +1,10 @@
+"""
+Author: Yue (Yelena) Yu, Rongfei (Eric) Jin
+Purpose: Multi-light dataset class for Intrinsic Imaging
+- Handles dataset loading for multi-light training scenarios
+- Supports multiple light sources and complex lighting setups
+"""
+
 import torch
 from torch.utils.data import Dataset
 from torchvision.io import decode_image
